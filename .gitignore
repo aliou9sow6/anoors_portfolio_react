@@ -10,3 +10,7 @@
 
 # production
 /build
+
+# Backend content ignored
+/backend/node_modules
+/backend/.env

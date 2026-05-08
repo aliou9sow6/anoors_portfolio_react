@@ -74,7 +74,7 @@ function DetaillerProjet({ projet, onAnnuler, onEditer, onSupprimer }) {
           </button>
           <button
             className="btn btn-supprimer"
-            onClick={() => onSupprimer(projet.id)}
+            onClick={() => onSupprimer(projet._id || projet.id)}
           >
             Supprimer
           </button>

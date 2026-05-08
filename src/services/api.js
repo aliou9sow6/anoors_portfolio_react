@@ -1,4 +1,5 @@
-const API_URL = 'http://localhost:3001/projets';
+// URL du backend Express (ne pas oublier le préfixe /api si vous l'utilisez dans vos routes)
+const API_URL = 'http://localhost:5000/api/projets';
 
 // Récupérer tous les projets
 export async function getProjets() {
@@ -38,6 +39,9 @@ export async function updateProjet(id, projet) {
 
 // Supprimer un projet
 export async function deleteProjet(id) {
+  if (!id) {
+    throw new Error('ID du projet requis pour la suppression');
+  }
   const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
   if (!res.ok) throw new Error('Erreur lors de la suppression du projet');
   return true;

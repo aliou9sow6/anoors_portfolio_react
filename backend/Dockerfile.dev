@@ -1,0 +1,31 @@
+# Dockerfile de développement pour le Backend
+FROM node:18-alpine
+
+# Installer git (nécessaire pour certaines dépendances)
+RUN apk add --no-cache git
+
+# Définir le répertoire de travail
+WORKDIR /app
+
+# Copier les fichiers de dépendances
+COPY package*.json ./
+
+# Installer TOUTES les dépendances (y compris devDependencies)
+RUN npm install
+
+# Copier le code source
+COPY . .
+
+# Créer un utilisateur non-root
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nextjs -u 1001
+
+# Changer les permissions
+RUN chown -R nextjs:nodejs /app
+USER nextjs
+
+# Exposer le port
+EXPOSE 5000
+
+# Démarrer en mode développement
+CMD ["npm", "run", "dev"]

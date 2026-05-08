@@ -31,7 +31,7 @@ function Dossier() {
 
     if (projets.length === 0) return;
 
-    const projet = projets.find((p) => String(p.id) === String(id));
+    const projet = projets.find((p) => String(p._id || p.id) === String(id));
     if (projet) {
       setProjetSelectionne(projet);
       setVue('detail');
@@ -60,7 +60,7 @@ function Dossier() {
   };
 
   const afficherDetail = (projet) => {
-    navigate(`/projets/${projet.id}`);
+    navigate(`/projets/${projet._id || projet.id}`);
   };
 
   const afficherAjouter = () => {
@@ -93,13 +93,13 @@ function Dossier() {
 
   // Supprimer un projet
   const handleSupprimer = async (idProjet) => {
-    const projet = projets.find((p) => p.id === idProjet);
+    const projet = projets.find((p) => (p._id || p.id) === idProjet);
     if (!window.confirm(`Supprimer le projet "${projet?.libelle}" ?`)) return;
     try {
       await deleteProjet(idProjet);
-      setProjets((prev) => prev.filter((p) => p.id !== idProjet));
+      setProjets((prev) => prev.filter((p) => (p._id || p.id) !== idProjet));
       afficherNotification(`✓ Projet supprimé`);
-      if (String(projetSelectionne?.id) === String(idProjet)) {
+      if (String(projetSelectionne?._id || projetSelectionne?.id) === String(idProjet)) {
         retourListe();
       }
     } catch (err) {
@@ -111,7 +111,7 @@ function Dossier() {
   const handleModifier = async (idProjet, donneesModifiees) => {
     try {
       const projetMaj = await updateProjet(idProjet, donneesModifiees);
-      setProjets((prev) => prev.map((p) => (p.id === idProjet ? projetMaj : p)));
+      setProjets((prev) => prev.map((p) => ((p._id || p.id) === idProjet ? projetMaj : p)));
       afficherNotification(`✓ Projet "${projetMaj.libelle}" modifié avec succès`);
       retourListe();
     } catch (err) {
@@ -152,7 +152,7 @@ function Dossier() {
     return (
       <EditerProjet
         projet={projetSelectionne}
-        onValider={(donnees) => handleModifier(projetSelectionne.id, donnees)}
+        onValider={(donnees) => handleModifier(projetSelectionne._id || projetSelectionne.id, donnees)}
         onAnnuler={retourListe}
       />
     );
@@ -222,7 +222,7 @@ function Dossier() {
         <div className="projets-grille">
           {projetsFiltres.map((projet) => (
             <Projet
-              key={projet.id}
+              key={projet._id || projet.id}
               projet={projet}
               onSupprimer={handleSupprimer}
               onAfficherDetail={afficherDetail}
