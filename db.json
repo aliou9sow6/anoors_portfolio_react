@@ -11,33 +11,21 @@
         "Stripe"
       ],
       "dateCreation": "2024-01-15",
-      "lien": "https://github.com/example/ecommerce"
+      "lien": "https://github.com/example/ecommerce",
+      "id": "GRhcczBJbPg"
     },
     {
-      "libelle": "Dashboard Analytics",
-      "image": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&q=80",
-      "description": "Tableau de bord de visualisation de données avec graphiques interactifs, filtres dynamiques et exports PDF.",
-      "technologies": [
-        "Vue.js",
-        "D3.js",
-        "Python",
-        "FastAPI"
-      ],
-      "lien": "https://github.com/example/dashboard",
-      "id": "2"
-    },
-    {
-      "id": "3",
       "libelle": "Application Mobile Fitness",
       "image": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&q=80",
       "description": "Application de suivi d'entraînement avec plans personnalisés, statistiques de progression et intégration GPS.",
       "technologies": [
         "React Native",
         "Firebase",
-        "Redux"
+        "Redux",
+        "Css"
       ],
-      "dateCreation": "2024-05-10",
-      "lien": "https://github.com/example/fitness"
+      "lien": "https://github.com/example/fitness",
+      "id": "3"
     },
     {
       "libelle": "test",
