@@ -1,5 +1,5 @@
 # Dockerfile pour le Backend Express
-FROM node:18-alpine
+FROM node:22-alpine
 
 # Définir le répertoire de travail
 WORKDIR /app
@@ -8,7 +8,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Installer les dépendances
-RUN npm ci --only=production && npm cache clean --force
+RUN npm install --omit=dev && npm cache clean --force
 
 # Copier le code source
 COPY . .

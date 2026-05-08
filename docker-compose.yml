@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Base de données MongoDB
   mongodb:
@@ -35,7 +33,7 @@ services:
       MONGODB_URI: mongodb://admin:password123@mongodb:27017/portfolio_db?authSource=admin
       PORT: 5000
     ports:
-      - "5000:5000"
+      - "5001:5000"
     depends_on:
       mongodb:
         condition: service_healthy
@@ -59,7 +57,7 @@ services:
     networks:
       - portfolio_network
     environment:
-      REACT_APP_API_URL: http://localhost:5000/api
+      REACT_APP_API_URL: http://localhost:5001/api
 
 volumes:
   mongodb_data:

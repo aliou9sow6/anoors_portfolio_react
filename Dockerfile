@@ -1,5 +1,5 @@
 # Dockerfile pour le Frontend React
-FROM node:18-alpine AS builder
+FROM node:22-alpine AS builder
 
 # Définir le répertoire de travail
 WORKDIR /app
@@ -8,7 +8,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Installer les dépendances
-RUN npm ci --only=production
+RUN npm install
 
 # Copier le code source
 COPY . .
