@@ -3,4 +3,6 @@
 @import 'tailwindcss/utilities';
 
 /* Import des styles personnalisés */
-@import './Team.css';
+@import './styles/Accueil.css';
+@import './styles/Projets.css';
+@import './styles/Contact.css';

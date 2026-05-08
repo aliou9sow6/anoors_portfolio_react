@@ -8,12 +8,9 @@ function Accueil() {
       <section className="hero">
         <h1 className="hero-titre">Bienvenue sur notre Portfolio</h1>
         <p className="hero-sous-titre">
-          Découvrez les projets passionnants que nous avons réalisés et rencontrez notre équipe talentueuse. Nous sommes fiers de partager notre travail et notre expertise avec vous.
+          Découvrez mes projets, compétences et expériences en développement web et mobile. Je suis passionné par la création d'applications modernes et innovantes qui offrent une expérience utilisateur exceptionnelle.
         </p>
         <div className="hero-actions">
-          <Link to="/team" className="btn btn-principal">
-            Notre équipe
-          </Link>
           <Link to="/contact" className="btn btn-secondaire">
             Me contacter
           </Link>

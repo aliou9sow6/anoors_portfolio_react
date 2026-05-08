@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route, NavLink, Link } from 'react-rou
 import Dossier from './components/Dossier';
 import Accueil from './components/Accueil';
 import Contact from './components/Contact';
-import Team from './components/Team';
 
 function App() {
   return (
@@ -13,12 +12,12 @@ function App() {
           <div className="header-inner">
             <Link to="/" className="logo">
               <img
-                src="/assets/logo.png"
+                src="/assets/profile.png"
                 alt="Logo Portfolio"
                 className="logo-image"
               />
               <span className="logo-dot" />
-              <span className="logo-text">Groupe4</span>
+              <span className="logo-text">aliouSow</span>
             </Link>
 
             {/* navigation */}
@@ -28,9 +27,6 @@ function App() {
               </NavLink>
               <NavLink to="/projets" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
                 Projets
-              </NavLink>
-              <NavLink to="/team" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-                Équipe
               </NavLink>
               <NavLink to="/contact" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
                 Contact
@@ -46,7 +42,6 @@ function App() {
             <Route path="/projets/:id" element={<Dossier />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="*" element={<Accueil />} />
-            <Route path="/team" element={<Team />} />
           </Routes>
         </main>
 
