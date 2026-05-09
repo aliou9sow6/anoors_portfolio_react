@@ -1,5 +1,7 @@
 // URL du backend Express (ne pas oublier le préfixe /api si vous l'utilisez dans vos routes)
-const API_URL = 'http://localhost:5000/api/projets';
+const API_URL = process.env.REACT_APP_API_URL
+  ? `${process.env.REACT_APP_API_URL}/projets`
+  : 'http://localhost:5001/api/projets';
 
 // Récupérer tous les projets
 export async function getProjets() {

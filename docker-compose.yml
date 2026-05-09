@@ -23,6 +23,7 @@ services:
 
   # Backend Express
   backend:
+    image: anoor9s6/portfolio-backend:latest
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -45,6 +46,7 @@ services:
 
   # Frontend React
   frontend:
+    image: anoor9s6/portfolio-frontend:latest
     build:
       context: .
       dockerfile: Dockerfile
