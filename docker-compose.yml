@@ -68,6 +68,7 @@ services:
       dockerfile: Dockerfile
     image: anoor9s6/jenkins:latest
     container_name: jenkins
+    user: root
     restart: unless-stopped
     ports:
       - "8080:8080"
