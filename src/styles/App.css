@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* ===================================================
    PORTFOLIO APP — Design System
    Police: Syne (titres) + DM Sans (corps)
@@ -916,13 +920,4 @@ body {
   font-size: 0.9rem;
   color: var(--text-secondary);
   line-height: 1.5;
-}
-
-/* ---------- Team ---------- */
-.team {
-  display: flex; /*Permet de centrer les éléments */
-  align-items: center; /*Centre les éléments verticalement */
-  justify-content: center; /*Centre les éléments horizontalement */
-  flex-direction: column;
-  gap: 3rem;
 }

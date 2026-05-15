@@ -16,8 +16,8 @@ function Contact() {
 
   return (
     <div className="min-h-[70vh] flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-lg bg-white rounded-2xl shadow-card p-8">
-        <h1 className="text-3xl font-bold text-primary font-syne mb-2 text-center">
+      <div className="w-full max-w-lg bg-card border border-[var(--border)] rounded-2xl shadow-card p-8">
+        <h1 className="text-3xl font-bold text-primary font-syne mb-4 text-center">
           Contactez-nous
         </h1>
         <p className="text-secondary text-center mb-8 font-dm-sans">

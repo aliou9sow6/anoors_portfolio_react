@@ -22,7 +22,7 @@ function Projet({ projet, onSupprimer, onAfficherDetail }) {
       {/* Corps */}
       <div className="projet-corps">
         {/* Libellé — ancre cliquable */}
-        <Link to={`/projets/${projet.id}`} className="projet-libelle">
+        <Link to={`/projets/${projet._id || projet.id}`} className="projet-libelle">
           {projet.libelle}
         </Link>
 
@@ -67,7 +67,7 @@ function Projet({ projet, onSupprimer, onAfficherDetail }) {
         </button>
         <button
           className="btn btn-supprimer"
-          onClick={() => onSupprimer(projet.id)}
+          onClick={() => onSupprimer(projet._id || projet.id)}
           title="Supprimer ce projet"
         >
           Supprimer

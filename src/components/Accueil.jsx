@@ -6,7 +6,7 @@ function Accueil() {
   return (
     <div className="accueil">
       <section className="hero">
-        <h1 className="hero-titre">Bienvenue sur notre Portfolio</h1>
+        <h1 className="hero-titre">Bienvenue sur mon Portfolio</h1>
         <p className="hero-sous-titre">
           Découvrez mes projets, compétences et expériences en développement web et mobile. Je suis passionné par la création d'applications modernes et innovantes qui offrent une expérience utilisateur exceptionnelle.
         </p>
