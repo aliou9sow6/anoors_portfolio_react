@@ -49,8 +49,9 @@ pipeline {
       }
       steps {
         sh '''
-          docker-compose pull || true
-          docker-compose up -d --build
+          docker compose pull || true
+          docker compose up -d --build
+          docker compose up -d --build
         '''
       }
     }
