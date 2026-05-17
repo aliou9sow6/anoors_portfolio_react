@@ -1,4 +1,4 @@
-# portfolioReact
+# Full Stack portfolio
 
 
 * application Web SPA (Single Page Application) de gestion de portfolio avec Reactjs
