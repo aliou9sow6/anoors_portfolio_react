@@ -76,8 +76,9 @@ pipeline {
         stage('Deploy Application') {
             steps {
                 sh '''
+                    docker compose down --remove-orphans || true
                     docker compose pull
-                    docker compose up -d --remove-orphans --force-recreate
+                    docker compose up -d
                 '''
             }
         }
