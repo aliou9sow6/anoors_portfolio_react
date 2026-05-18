@@ -21,3 +21,5 @@
 .env.test.local
 .env.production.local
 !env.example
+.vscode
+.idea

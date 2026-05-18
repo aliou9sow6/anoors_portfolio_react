@@ -20,6 +20,43 @@ pipeline {
                 checkout scm
             }
         }
+        // SonarQube analysis backend and frontend
+        stage('SonarQube Analysis') {
+            parallel {
+                stage('Analyze Backend') {
+                    steps {
+                        withSonarQubeEnv('sonarqube-server') {
+                            sh '''
+                                sonar-scanner \
+                                    -Dsonar.projectKey=fullstack-portfolio \
+                                    -Dsonar.sources=./backend \
+                                    -Dsonar.java.binaries=./backend/target/classes
+                            '''
+                        }
+                    }
+                }
+
+                stage('Analyze Frontend') {
+                    steps {
+                        withSonarQubeEnv('sonarqube-server') {
+                            sh '''
+                                sonar-scanner \
+                                    -Dsonar.projectKey=fullstack-portfolio \
+                                    -Dsonar.sources=./src
+                            '''
+                        }
+                    }
+                }
+            }
+        }
+        // Wait for SonarQube quality gate result
+        stage('Quality Gate') {
+            steps {
+                timeout(time: 5, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
 
         stage('Build Docker Images') {
             parallel {
