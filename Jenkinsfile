@@ -124,7 +124,7 @@ pipeline {
       }
 
       always {
-          cleanWs()
+          cleanWs() // Nettoie l'espace de travail après chaque build
       }
     }
 }
