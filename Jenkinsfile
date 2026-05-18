@@ -95,17 +95,36 @@ pipeline {
     }
 
     post {
+      success {
+          mail to: 'kernelshell7@gmail.com',
+              subject: "✅ Pipeline réussi - ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+              body: """
+              Le pipeline s'est exécuté avec succès !
 
-        success {
-            echo 'Pipeline executed successfully!'
-        }
+              Job       : ${env.JOB_NAME}
+              Build     : #${env.BUILD_NUMBER}
+              Durée     : ${currentBuild.durationString}
+              URL       : ${env.BUILD_URL}
+                          """
+                  }
 
-        failure {
-            echo 'Pipeline failed!'
-        }
+                  failure {
+                      mail to: 'kernelshell7@gmail.com',
+                          subject: "❌ Pipeline échoué - ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                          body: """
+              Le pipeline a échoué !
 
-        always {
-            cleanWs()
-        }
+              Job       : ${env.JOB_NAME}
+              Build     : #${env.BUILD_NUMBER}
+              Durée     : ${currentBuild.durationString}
+              URL       : ${env.BUILD_URL}
+
+              Consultez les logs : ${env.BUILD_URL}console
+                          """
+      }
+
+      always {
+          cleanWs()
+      }
     }
 }
