@@ -11,7 +11,7 @@ pipeline {
         FRONTEND_LATEST = "${DOCKERHUB_NAMESPACE}/portfolio-frontend:latest"
 
         DOCKERHUB_CREDENTIAL_ID = 'dockerhub-creds'
-        SONAR_HOST_URL = 'http://host.docker.internal:9000'
+        SONAR_SERVER = 'sonarqube-server'
         SONAR_PROJECT_KEY = 'anoors_portfolio_react'
     }
 
@@ -34,13 +34,10 @@ pipeline {
 
                 steps {
 
-                    withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
-
+                    withSonarQubeEnv("${SONAR_SERVER}") {
                         sh '''
                             sonar-scanner \
-                                -Dsonar.host.url=$SONAR_HOST_URL \
                                 -Dsonar.projectKey=$SONAR_PROJECT_KEY \
-                                -Dsonar.token=$SONAR_TOKEN \
                                 -Dsonar.sources=./src,./backend \
                                 -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/build/**
                         '''
