@@ -38,7 +38,7 @@ pipeline {
                                 sonar-scanner \
                                     -Dsonar.host.url=$SONAR_HOST_URL \
                                     -Dsonar.projectKey=$SONAR_PROJECT_KEY \
-                                    -Dsonar.login=$SONAR_TOKEN \
+                                    -Dsonar.token=${SONAR_TOKEN} \
                                     -Dsonar.sources=./backend
                             '''
                         }
@@ -58,7 +58,7 @@ pipeline {
                                 sonar-scanner \
                                     -Dsonar.host.url=$SONAR_HOST_URL \
                                     -Dsonar.projectKey=$SONAR_PROJECT_KEY \
-                                    -Dsonar.login=$SONAR_TOKEN \
+                                    -Dsonar.token=${SONAR_TOKEN} \
                                     -Dsonar.sources=./src
                             '''
                         }
