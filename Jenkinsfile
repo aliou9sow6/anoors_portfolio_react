@@ -11,7 +11,9 @@ pipeline {
         FRONTEND_LATEST = "${DOCKERHUB_NAMESPACE}/portfolio-frontend:latest"
 
         DOCKERHUB_CREDENTIAL_ID = 'dockerhub-creds'
-        SONAR_HOST_URL = 'https://sonarcloud.io/project/overview?id=aliou9sow6_anoors_portfolio_react'
+        SONAR_HOST_URL = 'https://sonarcloud.io'
+        SONAR_ORGANIZATION = 'aliou9sow6'
+        SONAR_PROJECT_KEY = 'aliou9sow6_anoors_portfolio_react'
     }
 
     stages {
@@ -25,28 +27,41 @@ pipeline {
         stage('SonarQube Analysis') {
             parallel {
                 stage('Analyze Backend') {
+                    agent {
+                        docker {
+                            image 'sonarsource/sonar-scanner-cli:latest'
+                            args '-u root:root'
+                        }
+                    }
                     steps {
                         withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
                             sh '''
                                 sonar-scanner \
                                     -Dsonar.host.url=$SONAR_HOST_URL \
+                                    -Dsonar.organization=$SONAR_ORGANIZATION \
+                                    -Dsonar.projectKey=$SONAR_PROJECT_KEY \
                                     -Dsonar.login=$SONAR_TOKEN \
-                                    -Dsonar.projectKey=fullstack-portfolio \
-                                    -Dsonar.sources=./backend \
-                                    -Dsonar.java.binaries=./backend/target/classes
+                                    -Dsonar.sources=./backend
                             '''
                         }
                     }
                 }
 
                 stage('Analyze Frontend') {
+                    agent {
+                        docker {
+                            image 'sonarsource/sonar-scanner-cli:latest'
+                            args '-u root:root'
+                        }
+                    }
                     steps {
                         withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
                             sh '''
                                 sonar-scanner \
                                     -Dsonar.host.url=$SONAR_HOST_URL \
+                                    -Dsonar.organization=$SONAR_ORGANIZATION \
+                                    -Dsonar.projectKey=$SONAR_PROJECT_KEY \
                                     -Dsonar.login=$SONAR_TOKEN \
-                                    -Dsonar.projectKey=fullstack-portfolio \
                                     -Dsonar.sources=./src
                             '''
                         }
