@@ -22,6 +22,18 @@ pipeline {
                     checkout scm
                 }
             }
+
+            stage('Install Dependencies') {
+                steps {
+                    sh 'npm install'
+                }
+            }
+
+            stage('Run Tests') {
+                steps {
+                    sh 'npm run test:coverage'
+                }
+            }
             // SonarQube analysis backend and frontend
             stage('SonarQube Analysis') {
 
