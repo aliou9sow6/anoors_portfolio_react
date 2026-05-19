@@ -11,6 +11,7 @@ pipeline {
         FRONTEND_LATEST = "${DOCKERHUB_NAMESPACE}/portfolio-frontend:latest"
 
         DOCKERHUB_CREDENTIAL_ID = 'dockerhub-creds'
+        SONAR_HOST_URL = 'https://sonarcloud.io/project/overview?id=aliou9sow6_anoors_portfolio_react'
     }
 
     stages {
@@ -25,9 +26,11 @@ pipeline {
             parallel {
                 stage('Analyze Backend') {
                     steps {
-                        withSonarQubeEnv('sonarqube-server') {
+                        withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
                             sh '''
                                 sonar-scanner \
+                                    -Dsonar.host.url=$SONAR_HOST_URL \
+                                    -Dsonar.login=$SONAR_TOKEN \
                                     -Dsonar.projectKey=fullstack-portfolio \
                                     -Dsonar.sources=./backend \
                                     -Dsonar.java.binaries=./backend/target/classes
@@ -38,9 +41,11 @@ pipeline {
 
                 stage('Analyze Frontend') {
                     steps {
-                        withSonarQubeEnv('sonarqube-server') {
+                        withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
                             sh '''
                                 sonar-scanner \
+                                    -Dsonar.host.url=$SONAR_HOST_URL \
+                                    -Dsonar.login=$SONAR_TOKEN \
                                     -Dsonar.projectKey=fullstack-portfolio \
                                     -Dsonar.sources=./src
                             '''
