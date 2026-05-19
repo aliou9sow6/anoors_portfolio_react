@@ -48,6 +48,7 @@ function Dossier() {
       const data = await getProjets();
       setProjets(data);
     } catch (err) {
+      console.error(err);
       setErreur('Impossible de charger les projets. Vérifiez que json-server est lancé (npm run server).');
     } finally {
       setChargement(false);
@@ -87,6 +88,7 @@ function Dossier() {
       afficherNotification(`✓ Projet "${projetCree.libelle}" ajouté avec succès`);
       setVue('liste');
     } catch (err) {
+      console.error(err);
       afficherNotification("✗ Erreur lors de l'ajout du projet", 'erreur');
     }
   };
@@ -94,7 +96,7 @@ function Dossier() {
   // Supprimer un projet
   const handleSupprimer = async (idProjet) => {
     const projet = projets.find((p) => (p._id || p.id) === idProjet);
-    if (!window.confirm(`Supprimer le projet "${projet?.libelle}" ?`)) return;
+    if (!globalThis.confirm(`Supprimer le projet "${projet?.libelle}" ?`)) return;
     try {
       await deleteProjet(idProjet);
       setProjets((prev) => prev.filter((p) => (p._id || p.id) !== idProjet));
@@ -103,6 +105,7 @@ function Dossier() {
         retourListe();
       }
     } catch (err) {
+      console.error(err);
       afficherNotification('✗ Erreur lors de la suppression', 'erreur');
     }
   };
@@ -115,6 +118,7 @@ function Dossier() {
       afficherNotification(`✓ Projet "${projetMaj.libelle}" modifié avec succès`);
       retourListe();
     } catch (err) {
+      console.error(err);
       afficherNotification('✗ Erreur lors de la modification', 'erreur');
     }
   };
@@ -122,7 +126,7 @@ function Dossier() {
   // Filtrage par recherche
   const projetsFiltres = projets.filter((p) =>
     p.libelle.toLowerCase().includes(recherche.toLowerCase()) ||
-    (p.description && p.description.toLowerCase().includes(recherche.toLowerCase()))
+    p.description?.toLowerCase().includes(recherche.toLowerCase())
   );
 
   // Affichage formulaire ajout
@@ -172,7 +176,7 @@ function Dossier() {
       <div className="dossier-header">
         <div className="dossier-title-group">
           <h1 className="dossier-title">Mes Projets</h1>
-          <span className="dossier-count">{projets.length} projet{projets.length !== 1 ? 's' : ''}</span>
+          <span className="dossier-count">{projets.length} projet{projets.length === 1 ? '' : 's'}</span>
         </div>
 
         <div className="dossier-header-actions">
@@ -207,18 +211,24 @@ function Dossier() {
       )}
 
       {/* Chargement */}
-      {chargement ? (
+      {chargement && (
         <div className="chargement">
           <div className="spinner" />
           <p>Chargement des projets…</p>
         </div>
-      ) : projetsFiltres.length === 0 ? (
+      )}
+
+      {/* Liste vide */}
+      {!chargement && projetsFiltres.length === 0 && (
         <div className="liste-vide">
           {recherche
             ? `Aucun projet ne correspond à "${recherche}"`
             : 'Aucun projet pour l\'instant. Ajoutez votre premier projet !'}
         </div>
-      ) : (
+      )}
+
+      {/* Grille de projets */}
+      {!chargement && projetsFiltres.length > 0 && (
         <div className="projets-grille">
           {projetsFiltres.map((projet) => (
             <Projet

@@ -1,6 +1,6 @@
 import React from 'react';
 
-function DeleteProject({ projet, onAnnuler, onConfirmer }) {
+function DeleteProject() {
     return (
         <div className="delete-project">
             <h2>Supprimer le projet</h2>
