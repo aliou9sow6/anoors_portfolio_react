@@ -41,20 +41,20 @@ pipeline {
                                 -Dsonar.host.url=$SONAR_HOST_URL \
                                 -Dsonar.projectKey=$SONAR_PROJECT_KEY \
                                 -Dsonar.token=$SONAR_TOKEN \
-                                -Dsonar.sources=./frontend/src,./backend \
+                                -Dsonar.sources=./src,./backend \
                                 -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/build/**
                         '''
                     }
                 }
-        }
-        // Wait for SonarQube quality gate result
-        stage('Quality Gate') {
-            steps {
-                timeout(time: 5, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
+            }
+            // Wait for SonarQube quality gate result
+            stage('Quality Gate') {
+                steps {
+                    timeout(time: 5, unit: 'MINUTES') {
+                        waitForQualityGate abortPipeline: true
+                    }
                 }
             }
-        }
 
         stage('Build Docker Images') {
             parallel {
