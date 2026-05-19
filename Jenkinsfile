@@ -23,15 +23,29 @@ pipeline {
                 }
             }
 
-            stage('Install Dependencies') {
-                steps {
-                    sh 'npm install'
-                }
-            }
+            // Install dependencies and run tests for both backend and frontend
+            stage('Install and Test') {
+                parallel {
 
-            stage('Run Tests') {
-                steps {
-                    sh 'npm run test:coverage'
+                    stage('Backend Install & Test') {
+                        steps {
+                            dir('backend') {
+                                sh '''
+                                    npm ci
+                                    npm test -- --coverage
+                                '''
+                            }
+                        }
+                    }
+
+                    stage('Frontend Install & Test') {
+                        steps {
+                            sh '''
+                                npm ci
+                                npm test -- --coverage
+                            '''
+                        }
+                    }
                 }
             }
             // SonarQube analysis backend and frontend
