@@ -11,9 +11,8 @@ pipeline {
         FRONTEND_LATEST = "${DOCKERHUB_NAMESPACE}/portfolio-frontend:latest"
 
         DOCKERHUB_CREDENTIAL_ID = 'dockerhub-creds'
-        SONAR_HOST_URL = 'https://sonarcloud.io'
-        SONAR_ORGANIZATION = 'aliou9sow6'
-        SONAR_PROJECT_KEY = 'aliou9sow6_anoors_portfolio_react'
+        SONAR_HOST_URL = 'http://sonarqube:9000'
+        SONAR_PROJECT_KEY = 'anoors_portfolio_react'
     }
 
     stages {
@@ -38,7 +37,6 @@ pipeline {
                             sh '''
                                 sonar-scanner \
                                     -Dsonar.host.url=$SONAR_HOST_URL \
-                                    -Dsonar.organization=$SONAR_ORGANIZATION \
                                     -Dsonar.projectKey=$SONAR_PROJECT_KEY \
                                     -Dsonar.login=$SONAR_TOKEN \
                                     -Dsonar.sources=./backend
@@ -59,7 +57,6 @@ pipeline {
                             sh '''
                                 sonar-scanner \
                                     -Dsonar.host.url=$SONAR_HOST_URL \
-                                    -Dsonar.organization=$SONAR_ORGANIZATION \
                                     -Dsonar.projectKey=$SONAR_PROJECT_KEY \
                                     -Dsonar.login=$SONAR_TOKEN \
                                     -Dsonar.sources=./src
