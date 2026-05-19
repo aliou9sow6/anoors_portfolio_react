@@ -15,56 +15,37 @@ pipeline {
         SONAR_PROJECT_KEY = 'anoors_portfolio_react'
     }
 
-    stages {
+        stages {
 
-        stage('Checkout Source Code') {
-            steps {
-                checkout scm
+            stage('Checkout Source Code') {
+                steps {
+                    checkout scm
+                }
             }
-        }
-        // SonarQube analysis backend and frontend
-        stage('SonarQube Analysis') {
-            parallel {
-                stage('Analyze Backend') {
-                    agent {
-                        docker {
-                            image 'sonarsource/sonar-scanner-cli:latest'
-                            args '-u root:root'
-                        }
-                    }
-                    steps {
-                        withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
-                            sh '''
-                                sonar-scanner \
-                                    -Dsonar.host.url=$SONAR_HOST_URL \
-                                    -Dsonar.projectKey=$SONAR_PROJECT_KEY \
-                                    -Dsonar.token=${SONAR_TOKEN} \
-                                    -Dsonar.sources=./backend
-                            '''
-                        }
+            // SonarQube analysis backend and frontend
+            stage('SonarQube Analysis') {
+
+                agent {
+                    docker {
+                        image 'sonarsource/sonar-scanner-cli:latest'
+                        args '-u root:root'
                     }
                 }
 
-                stage('Analyze Frontend') {
-                    agent {
-                        docker {
-                            image 'sonarsource/sonar-scanner-cli:latest'
-                            args '-u root:root'
-                        }
-                    }
-                    steps {
-                        withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
-                            sh '''
-                                sonar-scanner \
-                                    -Dsonar.host.url=$SONAR_HOST_URL \
-                                    -Dsonar.projectKey=$SONAR_PROJECT_KEY \
-                                    -Dsonar.token=${SONAR_TOKEN} \
-                                    -Dsonar.sources=./src
-                            '''
-                        }
+                steps {
+
+                    withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+
+                        sh '''
+                            sonar-scanner \
+                                -Dsonar.host.url=$SONAR_HOST_URL \
+                                -Dsonar.projectKey=$SONAR_PROJECT_KEY \
+                                -Dsonar.token=$SONAR_TOKEN \
+                                -Dsonar.sources=./frontend/src,./backend \
+                                -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/build/**
+                        '''
                     }
                 }
-            }
         }
         // Wait for SonarQube quality gate result
         stage('Quality Gate') {
