@@ -28,6 +28,12 @@ pipeline {
                 parallel {
 
                     stage('Backend Install & Test') {
+                        agent {
+                            docker {
+                                image 'node:18'
+                                args '-u root:root'
+                            }
+                        }
                         steps {
                             dir('backend') {
                                 sh '''
@@ -39,6 +45,12 @@ pipeline {
                     }
 
                     stage('Frontend Install & Test') {
+                        agent {
+                            docker {
+                                image 'node:18'
+                                args '-u root:root'
+                            }
+                        }
                         steps {
                             sh '''
                                 npm ci
