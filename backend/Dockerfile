@@ -15,10 +15,8 @@ COPY . .
 
 # Créer un utilisateur non-root pour la sécurité
 RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nextjs -u 1001
-
-# Changer les permissions
-RUN chown -R nextjs:nodejs /app
+    adduser -S nextjs -u 1001 && \
+    chown -R nextjs:nodejs /app
 USER nextjs
 
 # Exposer le port
