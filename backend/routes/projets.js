@@ -8,6 +8,7 @@ router.get('/', async (req, res) => {
     const projets = await Projet.find().sort({ dateCreation: -1 });
     res.json(projets);
   } catch (error) {
+    console.error('Erreur lors de la récupération des projets:', error);
     res.status(500).json({ error: 'Erreur lors de la récupération des projets' });
   }
 });
@@ -21,6 +22,7 @@ router.get('/:id', async (req, res) => {
     }
     res.json(projet);
   } catch (error) {
+    console.error('Erreur lors de la récupération du projet:', error);
     res.status(500).json({ error: 'Erreur lors de la récupération du projet' });
   }
 });
@@ -92,6 +94,7 @@ router.delete('/:id', async (req, res) => {
 
     res.json({ message: 'Projet supprimé avec succès' });
   } catch (error) {
+    console.error('Erreur lors de la suppression du projet:', error);
     res.status(500).json({ error: 'Erreur lors de la suppression du projet' });
   }
 });

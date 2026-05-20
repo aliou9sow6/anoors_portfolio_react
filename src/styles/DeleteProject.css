@@ -28,12 +28,12 @@
 
 .delete-project .btn-danger {
   background-color: #e74c3c;
-  color: #fff;
+  color: #000;
   margin-right: 10px;
 }
 .delete-project .btn-secondary {
   background-color: #bdc3c7;
-  color: #333;
+  color: #2c3e50;
 }
 
 

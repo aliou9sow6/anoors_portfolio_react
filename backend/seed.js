@@ -1,8 +1,10 @@
-require('dotenv').config();
-const mongoose = require('mongoose');
-const fs = require('fs');
-const path = require('path');
-const Projet = require('./models/Projet');
+import dotenv from 'dotenv';
+import mongoose from 'mongoose';
+import fs from 'node:fs';
+import path from 'node:path';
+import Projet from './models/Projet.js';
+
+dotenv.config();
 
 async function seedDatabase() {
   try {
