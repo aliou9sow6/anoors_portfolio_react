@@ -7,9 +7,9 @@ WORKDIR /app
 # Copier les fichiers de dépendances
 COPY package*.json ./
 
-# Installer les dépendances en utilisant le lockfile pour versions résolues
-# et empêcher l'exécution de scripts potentiellement non sûrs
-RUN npm ci --ignore-scripts
+# Installer les dépendances et ignorer les scripts de package
+# pour éviter les erreurs de verrouillage dues aux versions de lockfile.
+RUN npm install --ignore-scripts
 
 # Copier le code source
 COPY . .
