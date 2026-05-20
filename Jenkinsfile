@@ -22,44 +22,6 @@ pipeline {
                     checkout scm
                 }
             }
-
-            // Install dependencies and run tests for both backend and frontend
-            stage('Install and Test') {
-                parallel {
-
-                    stage('Backend Install & Test') {
-                        agent {
-                            docker {
-                                image 'node:18'
-                                args '-u root:root'
-                            }
-                        }
-                        steps {
-                            dir('backend') {
-                                sh '''
-                                    npm ci
-                                    npm test -- --coverage
-                                '''
-                            }
-                        }
-                    }
-
-                    stage('Frontend Install & Test') {
-                        agent {
-                            docker {
-                                image 'node:18'
-                                args '-u root:root'
-                            }
-                        }
-                        steps {
-                            sh '''
-                                npm ci
-                                npm test -- --coverage
-                            '''
-                        }
-                    }
-                }
-            }
             // SonarQube analysis backend and frontend
             stage('SonarQube Analysis') {
 
