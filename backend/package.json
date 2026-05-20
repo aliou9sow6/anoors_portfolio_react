@@ -18,5 +18,10 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "mongoose": "^9.6.1"
+  },
+  "rules": {
+    "no-unused-vars": "warn",
+    "no-console": "warn",
+    "no-undef": "warn"
   }
 }
