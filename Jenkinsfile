@@ -22,6 +22,21 @@ pipeline {
                     checkout scm
                 }
             }
+            
+            stage('Run Tests & Coverage') {
+                agent {
+                    docker {
+                        image 'node:18'
+                        args '-u root:root'
+                    }
+                }
+                steps {
+                    sh '''
+                        npm ci
+                        npm run test:ci
+                    '''
+                }
+            }
             // SonarQube analysis backend and frontend
             stage('SonarQube Analysis') {
 
