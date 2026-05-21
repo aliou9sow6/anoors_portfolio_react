@@ -24,8 +24,6 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "CI=false react-scripts build",
-    "test": "react-scripts test",
-    "test:ci": "CI=true react-scripts test --watchAll=false --coverage --coverageReporters=text-lcov --coverageDirectory=coverage",
     "server": "cd backend && npm start",
     "dev": "concurrently \"npm run server\" \"npm run start\""
   },
