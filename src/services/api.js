@@ -11,7 +11,7 @@ export async function getProjets() {
 }
 
 // Récupérer un projet par id
-export async function getProjet(id:) {
+export async function getProjet(id) {
   const res = await fetch(`${API_URL}/${id}`);
   if (!res.ok) throw new Error('Projet introuvable');
   return res.json();
