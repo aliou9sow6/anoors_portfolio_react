@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { compresserImage } from '../utils/imageUtils';
 
-function EditerProjet({ projet, onValider, onAnnuler }) {
+function EditerProjet() {
   const [champs, setChamps] = useState({
     libelle: projet.libelle || '',
     image: projet.image || '',
