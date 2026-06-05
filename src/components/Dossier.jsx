@@ -5,6 +5,7 @@ import Projet from './Projet';
 import AjouterProjet from './AjouterProjet';
 import DetaillerProjet from './DetaillerProjet';
 import EditerProjet from './EditerProjet';
+import DeleteProject from './DeleteProject';
 
 function Dossier() {
   const [projets, setProjets] = useState([]);
@@ -93,10 +94,14 @@ function Dossier() {
     }
   };
 
-  // Supprimer un projet
-  const handleSupprimer = async (idProjet) => {
-    const projet = projets.find((p) => (p._id || p.id) === idProjet);
-    if (!globalThis.confirm(`Supprimer le projet "${projet?.libelle}" ?`)) return;
+  // Demande de suppression (ouvre la confirmation)
+  const demanderSuppression = (projet) => {
+    setProjetSelectionne(projet);
+    setVue('supprimer');
+  };
+
+  // Supprimer un projet (exécuté après confirmation)
+  const supprimerProjet = async (idProjet) => {
     try {
       await deleteProjet(idProjet);
       setProjets((prev) => prev.filter((p) => (p._id || p.id) !== idProjet));
@@ -234,11 +239,22 @@ function Dossier() {
             <Projet
               key={projet._id || projet.id}
               projet={projet}
-              onSupprimer={handleSupprimer}
+              onSupprimer={demanderSuppression}
               onAfficherDetail={afficherDetail}
             />
           ))}
         </div>
+      )}
+      {/* Confirmation suppression */}
+      {vue === 'supprimer' && projetSelectionne && (
+        <DeleteProject
+          projet={projetSelectionne}
+          onConfirmer={(p) => {
+            supprimerProjet(p._id || p.id);
+            setVue('liste');
+          }}
+          onAnnuler={() => setVue('liste')}
+        />
       )}
     </div>
   );

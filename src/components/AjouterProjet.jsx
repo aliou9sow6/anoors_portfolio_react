@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import PropTypes from 'prop-types';
 import { compresserImage } from '../utils/imageUtils';
 
 const CHAMPS_VIDES = {
@@ -10,7 +9,7 @@ const CHAMPS_VIDES = {
   lien: '',
 };
 
-function AjouterProjet({ onAjouter, onAnnuler }) {
+function AjouterProjet({}) {
   const [champs, setChamps] = useState(CHAMPS_VIDES);
   const [imagePreview, setImagePreview] = useState('');
   const [erreurs, setErreurs] = useState({});
@@ -177,10 +176,5 @@ function AjouterProjet({ onAjouter, onAnnuler }) {
     </div>
   );
 }
-
-AjouterProjet.propTypes = {
-  onAjouter: PropTypes.func.isRequired,
-  onAnnuler: PropTypes.func.isRequired,
-};
 
 export default AjouterProjet;

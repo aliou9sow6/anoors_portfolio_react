@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import PropTypes from 'prop-types';
 
-function DetaillerProjet({ projet, onAnnuler, onEditer, onSupprimer }) {
+function DetaillerProjet({}) {
   const [imgError, setImgError] = useState(false);
   const placeholder = `https://placehold.co/1200x600/1a1a2e/6c63ff?text=${encodeURIComponent(projet.libelle)}`;
 
@@ -75,7 +74,7 @@ function DetaillerProjet({ projet, onAnnuler, onEditer, onSupprimer }) {
           </button>
           <button
             className="btn btn-supprimer"
-            onClick={() => onSupprimer(projet._id || projet.id)}
+            onClick={() => onSupprimer(projet)}
           >
             Supprimer
           </button>
@@ -87,21 +86,5 @@ function DetaillerProjet({ projet, onAnnuler, onEditer, onSupprimer }) {
     </div>
   );
 }
-
-DetaillerProjet.propTypes = {
-  projet: PropTypes.shape({
-    _id: PropTypes.string,
-    id: PropTypes.string,
-    libelle: PropTypes.string.isRequired,
-    image: PropTypes.string,
-    description: PropTypes.string,
-    dateCreation: PropTypes.string,
-    lien: PropTypes.string,
-    technologies: PropTypes.arrayOf(PropTypes.string),
-  }).isRequired,
-  onAnnuler: PropTypes.func.isRequired,
-  onEditer: PropTypes.func.isRequired,
-  onSupprimer: PropTypes.func.isRequired,
-};
 
 export default DetaillerProjet;

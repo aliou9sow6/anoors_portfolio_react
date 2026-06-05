@@ -68,7 +68,7 @@ function Projet({ projet, onAfficherDetail, onSupprimer }) {
         </button>
         <button
           className="btn btn-supprimer"
-          onClick={() => onSupprimer(projet._id || projet.id)}
+          onClick={() => onSupprimer(projet)}
           title="Supprimer ce projet"
         >
           Supprimer
