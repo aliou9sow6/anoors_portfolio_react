@@ -145,13 +145,13 @@ function Dossier() {
   }
 
   // Affichage détail
-  if (vue === 'detail' && projetSelectionne) {
+      if (vue === 'detail' && projetSelectionne) {
     return (
       <DetaillerProjet
         projet={projetSelectionne}
         onAnnuler={retourListe}
         onEditer={() => afficherEdition(projetSelectionne)}
-        onSupprimer={handleSupprimer}
+            onSupprimer={demanderSuppression}
       />
     );
   }
