@@ -178,8 +178,6 @@ function AjouterProjet({ onAjouter, onAnnuler }) {
   );
 }
 
-}
-
 AjouterProjet.propTypes = {
   onAjouter: PropTypes.func.isRequired,
   onAnnuler: PropTypes.func.isRequired,

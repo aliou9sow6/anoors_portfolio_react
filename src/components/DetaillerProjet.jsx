@@ -88,8 +88,6 @@ function DetaillerProjet({ projet, onAnnuler, onEditer, onSupprimer }) {
   );
 }
 
-}
-
 DetaillerProjet.propTypes = {
   projet: PropTypes.shape({
     _id: PropTypes.string,
