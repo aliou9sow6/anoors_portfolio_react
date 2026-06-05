@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 
 function Projet({ projet, onAfficherDetail, onSupprimer }) {
@@ -76,5 +77,19 @@ function Projet({ projet, onAfficherDetail, onSupprimer }) {
     </article>
   );
 }
+
+Projet.propTypes = {
+  projet: PropTypes.shape({
+    _id: PropTypes.string,
+    id: PropTypes.string,
+    libelle: PropTypes.string.isRequired,
+    image: PropTypes.string,
+    description: PropTypes.string,
+    dateCreation: PropTypes.string,
+    technologies: PropTypes.arrayOf(PropTypes.string),
+  }).isRequired,
+  onAfficherDetail: PropTypes.func.isRequired,
+  onSupprimer: PropTypes.func.isRequired,
+};
 
 export default Projet;

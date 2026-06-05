@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import PropTypes from 'prop-types';
 import { compresserImage } from '../utils/imageUtils';
 
 function EditerProjet({ projet, onValider, onAnnuler }) {
@@ -157,5 +158,19 @@ function EditerProjet({ projet, onValider, onAnnuler }) {
     </div>
   );
 }
+
+EditerProjet.propTypes = {
+  projet: PropTypes.shape({
+    _id: PropTypes.string,
+    id: PropTypes.string,
+    libelle: PropTypes.string.isRequired,
+    image: PropTypes.string,
+    description: PropTypes.string,
+    technologies: PropTypes.arrayOf(PropTypes.string),
+    lien: PropTypes.string,
+  }).isRequired,
+  onValider: PropTypes.func.isRequired,
+  onAnnuler: PropTypes.func.isRequired,
+};
 
 export default EditerProjet;

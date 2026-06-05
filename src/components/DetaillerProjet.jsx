@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import PropTypes from 'prop-types';
 
 function DetaillerProjet({ projet, onAnnuler, onEditer, onSupprimer }) {
   const [imgError, setImgError] = useState(false);
@@ -86,5 +87,21 @@ function DetaillerProjet({ projet, onAnnuler, onEditer, onSupprimer }) {
     </div>
   );
 }
+
+DetaillerProjet.propTypes = {
+  projet: PropTypes.shape({
+    _id: PropTypes.string,
+    id: PropTypes.string,
+    libelle: PropTypes.string.isRequired,
+    image: PropTypes.string,
+    description: PropTypes.string,
+    dateCreation: PropTypes.string,
+    lien: PropTypes.string,
+    technologies: PropTypes.arrayOf(PropTypes.string),
+  }).isRequired,
+  onAnnuler: PropTypes.func.isRequired,
+  onEditer: PropTypes.func.isRequired,
+  onSupprimer: PropTypes.func.isRequired,
+};
 
 export default DetaillerProjet;
