@@ -84,6 +84,7 @@ services:
   jenkins:
     image: anoor9s6/portfolio-jenkins:latest
     container_name: jenkins
+    user: root
     restart: unless-stopped
     ports:
       - "8080:8080"
