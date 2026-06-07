@@ -81,19 +81,15 @@ services:
     networks:
       - portfolio_network
 
+  
   jenkins:
-    image: anoor9s6/portfolio-jenkins:latest
-    container_name: jenkins
-    user: root
+    image: jenkins/jenkins:lts
+    container_name: portfolio_jenkins
     restart: unless-stopped
     ports:
       - "8080:8080"
       - "50000:50000"
-    volumes:
-      - jenkins_home:/var/jenkins_home
-      - /var/run/docker.sock:/var/run/docker.sock
-    networks:
-      - portfolio_network
+    
 
 volumes:
   mongodb_data:
