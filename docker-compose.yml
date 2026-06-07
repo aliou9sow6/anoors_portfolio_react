@@ -85,12 +85,14 @@ services:
     image: anoor9s6/portfolio-jenkins:latest
     container_name: jenkins
     restart: unless-stopped
+    privileged: true
     ports:
       - "8080:8080"
       - "50000:50000"
     volumes:
       - jenkins_home:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock
+      - /usr/bin/docker:/usr/bin/docker
     networks:
       - portfolio_network
 
@@ -109,3 +111,4 @@ volumes:
 networks:
   portfolio_network:
     driver: bridge
+    
