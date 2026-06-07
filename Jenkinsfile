@@ -54,6 +54,12 @@ pipeline {
             // }
 
         stage('Build Docker Images') {
+            agent {
+                docker {
+                    image 'docker:24.0.5'
+                    args '-v /var/run/docker.sock:/var/run/docker.sock -v $HOME/.docker:/root/.docker'
+                }
+            }
             parallel {
 
                 stage('Build Backend Image') {
