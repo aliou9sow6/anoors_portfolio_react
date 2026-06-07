@@ -13,4 +13,9 @@ RUN set -eux \
       docker-workflow \
       github
 
+# Ensure a `docker` group exists and add the `jenkins` user to it so the
+# containerized agent can access the host Docker socket when mounted.
+RUN groupadd docker || true \
+  && usermod -aG docker jenkins || true
+
 USER jenkins
