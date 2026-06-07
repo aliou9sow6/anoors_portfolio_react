@@ -82,7 +82,7 @@ services:
       - portfolio_network
 
   jenkins:
-    image: jenkins/jenkins:lts
+    image: anoor9s6/portfolio-jenkins:latest
     container_name: jenkins
     restart: unless-stopped
     ports:
