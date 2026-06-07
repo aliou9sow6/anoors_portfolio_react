@@ -23,43 +23,37 @@ pipeline {
                 }
             }
             // SonarQube analysis backend and frontend
-            // stage('SonarQube Analysis') {
+            stage('SonarQube Analysis') {
 
-            //     agent {
-            //         docker {
-            //             image 'sonarsource/sonar-scanner-cli:latest'
-            //             args '-u root:root'
-            //         }
-            //     }
+                agent {
+                    docker {
+                        image 'sonarsource/sonar-scanner-cli:latest'
+                        args '-u root:root'
+                    }
+                }
 
-            //     steps {
+                steps {
 
-            //         withSonarQubeEnv("${SONAR_SERVER}") {
-            //             sh '''
-            //                 sonar-scanner \
-            //                     -Dsonar.projectKey=$SONAR_PROJECT_KEY \
-            //                     -Dsonar.sources=./src,./backend \
-            //                     -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/build/**
-            //             '''
-            //         }
-            //     }
-            // }
-            // // Wait for SonarQube quality gate result
-            // stage('Quality Gate') {
-            //     steps {
-            //         timeout(time: 5, unit: 'MINUTES') {
-            //             waitForQualityGate abortPipeline: true
-            //         }
-            //     }
-            // }
-
-        stage('Build Docker Images') {
-            agent {
-                docker {
-                    image 'docker:24.0.5'
-                    args '-v /var/run/docker.sock:/var/run/docker.sock -v $HOME/.docker:/root/.docker'
+                    withSonarQubeEnv("${SONAR_SERVER}") {
+                        sh '''
+                            sonar-scanner \
+                                -Dsonar.projectKey=$SONAR_PROJECT_KEY \
+                                -Dsonar.sources=./src,./backend \
+                                -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/build/**
+                        '''
+                    }
                 }
             }
+            // Wait for SonarQube quality gate result
+            stage('Quality Gate') {
+                steps {
+                    timeout(time: 5, unit: 'MINUTES') {
+                        waitForQualityGate abortPipeline: true
+                    }
+                }
+            }
+
+        stage('Build Docker Images') {
             parallel {
 
                 stage('Build Backend Image') {
