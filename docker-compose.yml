@@ -44,10 +44,10 @@ services:
       - "3000:80"
     depends_on:
       - backend
-    networks:
-      - portfolio_network
     environment:
       REACT_APP_API_URL: http://localhost:5001/api
+    networks:
+      - portfolio_network
 
   sonarqube:
     image: sonarqube:community
@@ -60,8 +60,7 @@ services:
     ports:
       - "9000:9000"
     depends_on:
-      sonar_db:
-        condition: service_started
+      - sonar_db
     volumes:
       - sonarqube_data:/opt/sonarqube/data
       - sonarqube_extensions:/opt/sonarqube/extensions
@@ -81,27 +80,28 @@ services:
     networks:
       - portfolio_network
 
-  
   jenkins:
-    image: jenkins/jenkins:lts
+    build:
+      context: .
+      dockerfile: Dockerfile.jenkins
     container_name: portfolio_jenkins
     restart: unless-stopped
+    user: root
     ports:
       - "8080:8080"
       - "50000:50000"
-    
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - portfolio_network
 
 volumes:
   mongodb_data:
-    driver: local
   sonarqube_data:
-    driver: local
   sonarqube_extensions:
-    driver: local
   sonarqube_db:
-    driver: local
   jenkins_home:
-    driver: local
 
 networks:
   portfolio_network:
