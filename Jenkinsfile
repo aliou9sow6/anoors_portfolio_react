@@ -22,7 +22,7 @@ pipeline {
                     checkout scm
                 }
             }
-            SonarQube analysis backend and frontend
+            // SonarQube analysis backend and frontend
             stage('SonarQube Analysis') {
 
                 agent {
