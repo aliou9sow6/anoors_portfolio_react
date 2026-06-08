@@ -17,9 +17,10 @@ pipeline {
 
         stages {
 
-        stage('Checkout Source Code') {
-            steps {
-                checkout scm
+            stage('Checkout Source Code') {
+                steps {
+                    checkout scm
+                }
             }
 
             stage('SonarQube Analysis') {
@@ -27,10 +28,10 @@ pipeline {
                     docker {
                         image 'sonarsource/sonar-scanner-cli:latest'
                         args '-u root:root'
+                        reuseNode true
                     }
                 }
                 steps {
-
                     withSonarQubeEnv("${SONAR_SERVER}") {
                         sh '''
                             sonar-scanner \
@@ -41,6 +42,7 @@ pipeline {
                     }
                 }
             }
+
             stage('Quality Gate') {
                 steps {
                     timeout(time: 5, unit: 'MINUTES') {
@@ -48,10 +50,8 @@ pipeline {
                     }
                 }
             }
-        }
-            
 
-        stage('Build Docker Images') {
+            stage('Build Docker Images') {
             parallel {
 
                 stage('Build Backend Image') {
@@ -107,6 +107,19 @@ pipeline {
             steps {
                 sh '''         
                     docker rm -f portfolio_mongodb portfolio_backend portfolio_frontend portfolio_sonarqube_db portfolio_sonarqube || true
+
+                    if command -v docker-compose >/dev/null 2>&1; then
+                        DC=docker-compose
+                    elif docker compose version >/dev/null 2>&1; then
+                        DC="docker compose"
+                    else
+                        echo "Error: neither 'docker-compose' nor 'docker compose' is available." >&2
+                        exit 1
+                    fi
+
+                    $DC down --remove-orphans || true
+                    $DC pull
+                    $DC up -d
                 '''
             }
         }
