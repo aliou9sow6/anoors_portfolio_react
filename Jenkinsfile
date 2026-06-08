@@ -32,12 +32,10 @@ pipeline {
                     }
                 }
                 steps {
-                    withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+                    withSonarQubeEnv("${SONAR_SERVER}") {
                         sh '''
                             sonar-scanner \
-                                -Dsonar.host.url=${SONAR_HOST_URL} \
-                                -Dsonar.login=${SONAR_TOKEN} \
-                                -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                                -Dsonar.projectKey=$SONAR_PROJECT_KEY \
                                 -Dsonar.sources=./src,./backend \
                                 -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/build/**
                         '''
@@ -109,19 +107,6 @@ pipeline {
             steps {
                 sh '''         
                     docker rm -f portfolio_mongodb portfolio_backend portfolio_frontend portfolio_sonarqube_db portfolio_sonarqube || true
-
-                    if command -v docker-compose >/dev/null 2>&1; then
-                        DC=docker-compose
-                    elif docker compose version >/dev/null 2>&1; then
-                        DC="docker compose"
-                    else
-                        echo "Error: neither 'docker-compose' nor 'docker compose' is available." >&2
-                        exit 1
-                    fi
-
-                    $DC down --remove-orphans || true
-                    $DC pull
-                    $DC up -d
                 '''
             }
         }
