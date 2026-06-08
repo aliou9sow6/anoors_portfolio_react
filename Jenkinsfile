@@ -11,7 +11,7 @@ pipeline {
         FRONTEND_LATEST = "${DOCKERHUB_NAMESPACE}/portfolio-frontend:latest"
 
         DOCKERHUB_CREDENTIAL_ID = 'dockerhub-creds'
-        SONAR_SERVER = 'sonarqube-server'
+        SONAR_SERVER = 'sonar-token'
         SONAR_PROJECT_KEY = 'anoors_portfolio_react'
     }
 
