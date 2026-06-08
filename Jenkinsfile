@@ -17,11 +17,11 @@ pipeline {
 
         stages {
 
-            stage('Checkout Source Code') {
-                steps {
-                    checkout scm
-                }
+        stage('Checkout Source Code') {
+            steps {
+                checkout scm
             }
+
             stage('SonarQube Analysis') {
                 agent {
                     docker {
@@ -29,7 +29,6 @@ pipeline {
                         args '-u root:root'
                     }
                 }
-
                 steps {
 
                     withSonarQubeEnv("${SONAR_SERVER}") {
@@ -49,6 +48,8 @@ pipeline {
                     }
                 }
             }
+        }
+            
 
         stage('Build Docker Images') {
             parallel {
