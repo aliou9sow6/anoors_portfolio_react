@@ -109,9 +109,6 @@ pipeline {
             steps {
                 sh '''         
                     docker rm -f portfolio_mongodb portfolio_backend portfolio_frontend portfolio_sonarqube_db portfolio_sonarqube || true
-                    docker compose down --remove-orphans || true
-                    docker compose pull
-                    docker compose up -d
                 '''
             }
         }
