@@ -22,9 +22,7 @@ pipeline {
                     checkout scm
                 }
             }
-            // SonarQube analysis backend and frontend
             stage('SonarQube Analysis') {
-
                 agent {
                     docker {
                         image 'sonarsource/sonar-scanner-cli:latest'
@@ -44,7 +42,6 @@ pipeline {
                     }
                 }
             }
-            // Wait for SonarQube quality gate result
             stage('Quality Gate') {
                 steps {
                     timeout(time: 5, unit: 'MINUTES') {
