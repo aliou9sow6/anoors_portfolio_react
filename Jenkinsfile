@@ -129,9 +129,9 @@ pipeline {
     post {
       success {
           mail to: 'kernelshell7@gmail.com',
-              subject: "✅ Pipeline réussi - ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+              subject: "✅ Pipeline reussi - ${env.JOB_NAME} #${env.BUILD_NUMBER}",
               body: """
-              Le pipeline s'est exécuté avec succès !
+              Le pipeline s'est execute avec succes !
 
               Job       : ${env.JOB_NAME}
               Build     : #${env.BUILD_NUMBER}
@@ -142,9 +142,9 @@ pipeline {
 
                   failure {
                       mail to: 'kernelshell7@gmail.com',
-                          subject: "❌ Pipeline échoué - ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                          subject: "❌ Pipeline echoue - ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                           body: """
-              Le pipeline a échoué !
+              Le pipeline a echoue !
 
               Job       : ${env.JOB_NAME}
               Build     : #${env.BUILD_NUMBER}
