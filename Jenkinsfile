@@ -24,15 +24,16 @@ pipeline {
             }
 
             stage('SonarQube Analysis') {
-                agent {
-                    docker {
-                        image 'sonarsource/sonar-scanner-cli:latest'
-                        args '-u root:root'
-                        reuseNode true
-                    }
-                }
+                // agent {
+                //     docker {
+                //         image 'sonarsource/sonar-scanner-cli:latest'
+                //         args '-u root:root'
+                //         reuseNode true
+                //     }
+                // }
                 steps {
                     withSonarQubeEnv("${SONAR_SERVER}") {
+                        def scannerHome = tool 'sonar-scanner'
                         sh '''
                             sonar-scanner \
                                 -Dsonar.projectKey=$SONAR_PROJECT_KEY \
