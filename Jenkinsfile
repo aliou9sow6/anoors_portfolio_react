@@ -24,13 +24,13 @@ pipeline {
             }
 
             stage('SonarQube Analysis') {
-                // agent {
-                //     docker {
-                //         image 'sonarsource/sonar-scanner-cli:latest'
-                //         args '-u root:root'
-                //         reuseNode true
-                //     }
-                // }
+                agent {
+                    docker {
+                        image 'sonarsource/sonar-scanner-cli:latest'
+                        args '-u root:root'
+                        reuseNode true
+                    }
+                }
                 steps {
                     withSonarQubeEnv("${SONAR_SERVER}") {
                         sh '''
