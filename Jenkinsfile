@@ -26,13 +26,12 @@ pipeline {
             stage('SonarQube Analysis') {
                 steps {
                     script {
-                        withSonarQubeEnv("${SONAR_SERVER}") {
-                            def scannerHome = tool 'sonar-scanner'
-                            withEnv(["PATH+SONAR=${scannerHome}/bin"]) {
-                                sh '''
-                                    sonar-scanner
-                                '''
-                            }
+                        def scannerHome = tool 'sonar-scanner'
+                        withEnv(["PATH+SONAR=${scannerHome}/bin",
+                                "SONAR_HOST_URL=http://portfolio_sonarqube:9000"]) {
+                            sh '''
+                                sonar-scanner
+                            '''
                         }
                     }
                 }
