@@ -95,9 +95,11 @@ pipeline {
         stage('Deploy Application') {
             steps {
                 sh '''         
-                    # Redémarrer uniquement les services applicatifs
-                    docker compose down --remove-orphans backend frontend || true
-                    docker compose up -d backend frontend
+                    # Supprimer seulement les containers spécifiques
+                    docker rm -f portfolio_backend portfolio_frontend || true
+                    
+                    # Redémarrer depuis docker-compose
+                    docker compose up -d
                 '''
             }
         }
