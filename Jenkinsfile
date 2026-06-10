@@ -25,7 +25,9 @@ pipeline {
             stage('SonarQube Analysis') {
                 steps {
                     withSonarQubeEnv('sonarqube-server') {
-                        sh '/var/jenkins_home/tools/hudson.plugins.sonar.SonarRunnerInstallation/sonar-scanner/bin/sonar-scanner'
+                        withEnv(["SONAR_HOST_URL=http://sonarqube:9000"]) {
+                            sh '/var/jenkins_home/tools/hudson.plugins.sonar.SonarRunnerInstallation/sonar-scanner/bin/sonar-scanner -Dsonar.host.url=http://sonarqube:9000'
+                        }
                     }
                 }
             }
