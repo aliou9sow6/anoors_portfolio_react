@@ -28,7 +28,7 @@ pipeline {
                     script {
                         def scannerHome = tool 'sonar-scanner'
                         withEnv(["PATH+SONAR=${scannerHome}/bin",
-                                "SONAR_HOST_URL=http://portfolio_sonarqube:9000"]) {
+                                "SONAR_HOST_URL=http://localhost:9000"]) {
                             sh '''
                                 sonar-scanner
                             '''
