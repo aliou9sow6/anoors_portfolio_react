@@ -26,14 +26,10 @@ pipeline {
             stage('SonarQube Analysis') {
                 steps {
                     withSonarQubeEnv("${SONAR_SERVER}") {
-                        sh '''
-                            docker run --rm \
-                            --network host \
-                            -v "$PWD":/usr/src \
-                            -w /usr/src \
-                            sonarsource/sonar-scanner-cli \
-                            -Dsonar.host.url=$SONAR_HOST_URL \
-                            -Dsonar.token=$SONAR_AUTH_TOKEN
+                       sh '''
+                            sonar-scanner \
+                            -Dsonar.projectKey=$SONAR_PROJECT_KEY \
+                            -Dsonar.sources=src,backend
                         '''
                     }
                 }
