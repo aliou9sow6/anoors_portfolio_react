@@ -25,19 +25,11 @@ pipeline {
 
             stage('SonarQube Analysis') {
                 steps {
-                    script {
-                        def scannerHome = tool 'sonar-scanner'
-                        withSonarQubeEnv("${SONAR_SERVER}") {
-                            withEnv(["PATH+SONAR=${scannerHome}/bin"]) {
-                                sh '''
-                                    sonar-scanner \
-                                        -Dsonar.host.url="$SONAR_HOST_URL" \
-                                        -Dsonar.login="$SONAR_AUTH_TOKEN" \
-                                        -Dsonar.token="$SONAR_AUTH_TOKEN" \
-                                        -Dsonar.projectKey=$SONAR_PROJECT_KEY \
-                                        -Dsonar.sources=src,backend
-                                '''
-                            }
+                    withSonarQubeEnv("${SONAR_SERVER}") {
+                        withEnv(['PATH+SONAR=${tool "sonar-scanner"}/bin']) {
+                            sh '''
+                                sonar-scanner
+                            '''
                         }
                     }
                 }
