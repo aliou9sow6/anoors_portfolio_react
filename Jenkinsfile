@@ -13,7 +13,6 @@ pipeline {
         DOCKERHUB_CREDENTIAL_ID = 'dockerhub-creds'
         SONAR_SERVER = 'sonarqube-server'
         SONAR_PROJECT_KEY = 'anoors_portfolio_react'
-        SONAR_TOKEN = credentials('sonar-token')
     }
 
         stages {
@@ -26,20 +25,16 @@ pipeline {
 
             stage('SonarQube Analysis') {
                 steps {
-                    withCredentials([string(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN')]) {
-                        script {
-                            def scannerHome = tool 'sonar-scanner'
-                            withEnv(["PATH+SONAR=${scannerHome}/bin",
-                                    "SONAR_HOST_URL=http://172.19.0.3:9000",
-                                    "SONAR_TOKEN=${SONAR_TOKEN}"]) {
-                                sh '''
-                                    sonar-scanner
-                                '''
-                            }
+                    withSonarQubeEnv("${SONAR_SERVER}") {
+                        withEnv(['PATH+SONAR=${tool "sonar-scanner"}/bin']) {
+                            sh '''
+                                sonar-scanner
+                            '''
                         }
                     }
                 }
             }
+
             stage('Quality Gate') {
                 steps {
                     timeout(time: 5, unit: 'MINUTES') {
