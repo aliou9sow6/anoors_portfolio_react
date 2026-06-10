@@ -25,14 +25,16 @@ pipeline {
 
             stage('SonarQube Analysis') {
                 steps {
-                    withSonarQubeEnv("${SONAR_SERVER}") {
-                        withEnv(['PATH+SONAR=${tool "sonar-scanner"}/bin']) {
-                            sh '''
-                                sonar-scanner
-                            '''
+                    script {
+                            def scannerHome = tool 'sonar-scanner'
+                            withEnv(["PATH+SONAR=${scannerHome}/bin",
+                                    "SONAR_HOST_URL=http://172.19.0.3:9000"]) {
+                                sh '''
+                                    sonar-scanner
+                                '''
+                            }
                         }
                     }
-                }
             }
 
             stage('Quality Gate') {
