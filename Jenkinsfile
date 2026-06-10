@@ -24,11 +24,13 @@ pipeline {
             }
 
             stage('SonarQube Analysis') {
-               
                 steps {
                     withSonarQubeEnv("${SONAR_SERVER}") {
                         sh '''
-                            sonar-scanner \
+                            docker run --rm \
+                                -v "$PWD":/usr/src \
+                                -w /usr/src \
+                                sonarsource/sonar-scanner-cli \
                                 -Dsonar.projectKey=$SONAR_PROJECT_KEY \
                                 -Dsonar.sources=./src,./backend \
                                 -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/build/**
