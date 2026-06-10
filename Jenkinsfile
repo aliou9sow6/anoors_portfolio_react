@@ -22,6 +22,25 @@ pipeline {
                 }
             }
 
+            stage('Start SonarQube') {
+                steps {
+                    sh '''
+                        if command -v docker-compose >/dev/null 2>&1; then
+                            DC=docker-compose
+                        else
+                            DC="docker compose"
+                        fi
+
+                        $DC up -d sonar_db sonarqube
+
+                        until curl -sSf http://localhost:9000/api/system/status | grep -q "UP"; do
+                            echo "Waiting for SonarQube to become available..."
+                            sleep 5
+                        done
+                    '''
+                }
+            }
+
             stage('SonarQube Analysis') {
                 steps {
                     withSonarQubeEnv("${SONAR_SERVER}") {
@@ -33,7 +52,8 @@ pipeline {
                                 def scannerHome = tool 'sonar-scanner'
 
                                 withEnv([
-                                    "PATH+SONAR=${scannerHome}/bin"
+                                    "PATH+SONAR=${scannerHome}/bin",
+                                    'SONAR_HOST_URL=http://localhost:9000'
                                 ]) {
                                     sh 'sonar-scanner'
                                 }
