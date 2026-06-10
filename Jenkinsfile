@@ -26,12 +26,13 @@ pipeline {
                 steps {
                     sh '''
                         if command -v docker-compose >/dev/null 2>&1; then
-                            DC=docker-compose
+                            docker-compose up -d sonar_db sonarqube
+                        elif docker compose version >/dev/null 2>&1; then
+                            docker compose up -d sonar_db sonarqube
                         else
-                            DC="docker compose"
+                            echo "ERROR: docker-compose or docker compose is required but not available"
+                            exit 1
                         fi
-
-                        $DC up -d sonar_db sonarqube
 
                         until curl -sSf http://localhost:9000/api/system/status | grep -q "UP"; do
                             echo "Waiting for SonarQube to become available..."
