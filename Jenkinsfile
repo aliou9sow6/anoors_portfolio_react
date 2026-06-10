@@ -23,22 +23,9 @@ pipeline {
             }
 
             stage('SonarQube Analysis') {
-                steps {
-                    withSonarQubeEnv("${SONAR_SERVER}") {
-                        withCredentials([string(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN')]) {
-                            script {
-                                def scannerHome = tool 'sonar-scanner'
-                                withEnv([
-                                    "PATH+SONAR=${scannerHome}/bin",
-                                    'SONAR_HOST_URL=http://sonarqube:9000'
-                                ]){
-                                    sh '''
-                                        sonar-scanner -Dsonar.host.url=http://sonarqube:9000
-                                    '''
-                                }
-                            }
-                        }
-                    }
+                def scannerHome = tool 'SonarScanner';
+                withSonarQubeEnv() {
+                 sh "${scannerHome}/bin/sonar-scanner"
                 }
             }
 
