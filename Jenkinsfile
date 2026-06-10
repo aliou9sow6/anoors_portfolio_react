@@ -12,7 +12,6 @@ pipeline {
 
         DOCKERHUB_CREDENTIAL_ID = 'dockerhub-creds'
         SONAR_SERVER = 'sonarqube-server'
-        SONAR_PROJECT_KEY = 'anoors_portfolio_react'
     }
 
         stages {
@@ -26,11 +25,14 @@ pipeline {
             stage('SonarQube Analysis') {
                 steps {
                     withSonarQubeEnv("${SONAR_SERVER}") {
-                        withEnv(['PATH+SONAR=${tool "sonar-scanner"}/bin']) {
-                            sh '''
-                                sonar-scanner
-                            '''
-                        }
+                        sh '''
+                            docker run --rm --network host \
+                                -v "$WORKSPACE":/usr/src \
+                                -w /usr/src \
+                                sonarsource/sonar-scanner-cli \
+                                -Dsonar.host.url="$SONAR_HOST_URL" \
+                                -Dsonar.token="$SONAR_AUTH_TOKEN"
+                        '''
                     }
                 }
             }
