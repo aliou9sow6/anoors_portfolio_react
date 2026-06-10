@@ -100,14 +100,6 @@ pipeline {
             }
         }
 
-        stage('Remove Unused Docker Resources') {
-            steps {
-                sh '''
-                    docker image prune -f
-                    docker container prune -f
-                '''
-            }
-        }
     }
 
     post {
