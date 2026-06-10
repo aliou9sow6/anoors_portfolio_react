@@ -94,10 +94,20 @@ pipeline {
 
         stage('Deploy Application') {
             steps {
-                sh '''         
-                    # Redémarrer uniquement les services applicatifs
-                    docker-compose down --remove-orphans backend frontend || true
-                    docker-compose up -d backend frontend
+                sh '''
+                    # Choose compose command depending on Jenkins environment
+                    if command -v docker-compose >/dev/null 2>&1; then
+                      COMPOSE_CMD=docker-compose
+                    elif docker compose version >/dev/null 2>&1; then
+                      COMPOSE_CMD="docker compose"
+                    else
+                      echo "ERROR: neither docker-compose nor docker compose is available"
+                      exit 1
+                    fi
+
+                    # Restart only application services
+                    $COMPOSE_CMD -f docker-compose.yml down --remove-orphans backend frontend || true
+                    $COMPOSE_CMD -f docker-compose.yml up -d backend frontend
                 '''
             }
         }
