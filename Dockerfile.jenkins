@@ -8,9 +8,6 @@ RUN apt-get update && \
     unzip /tmp/sonar-scanner.zip -d /opt && \
     ln -s /opt/sonar-scanner-5.15.0.6499-linux/bin/sonar-scanner /usr/local/bin/sonar-scanner && \
     rm /tmp/sonar-scanner.zip && \
-    # Ajouter jenkins au groupe docker
-    groupadd -f docker && \
-    usermod -aG docker jenkins && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# USER jenkins
+USER jenkins
