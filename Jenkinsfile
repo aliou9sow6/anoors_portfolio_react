@@ -96,8 +96,8 @@ pipeline {
             steps {
                 sh '''         
                     # Redémarrer uniquement les services applicatifs
-                    docker-compose down --remove-orphans backend frontend || true
-                    docker-compose up -d backend frontend
+                    docker compose down --remove-orphans backend frontend || true
+                    docker compose up -d backend frontend
                 '''
             }
         }
