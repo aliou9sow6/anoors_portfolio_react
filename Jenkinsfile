@@ -27,9 +27,7 @@ pipeline {
                 steps {
                     withSonarQubeEnv("${SONAR_SERVER}") {
                         sh '''
-                            docker run --rm \
-                                -e SONAR_HOST_URL="$SONAR_HOST_URL" \
-                                -e SONAR_AUTH_TOKEN="$SONAR_AUTH_TOKEN" \
+                            docker run --rm --network host \
                                 -v "$PWD":/usr/src \
                                 -w /usr/src \
                                 sonarsource/sonar-scanner-cli \
