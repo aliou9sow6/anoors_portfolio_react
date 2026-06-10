@@ -95,7 +95,9 @@ pipeline {
         stage('Deploy Application') {
             steps {
                 sh '''         
-                    docker rm -f portfolio_mongodb portfolio_backend portfolio_frontend portfolio_sonarqube_db portfolio_sonarqube || true
+                    # Redémarrer uniquement les services applicatifs
+                    docker-compose down --remove-orphans backend frontend || true
+                    docker-compose up -d backend frontend
                 '''
             }
         }
