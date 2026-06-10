@@ -95,15 +95,14 @@ pipeline {
         stage('Deploy Application') {
             steps {
                 sh '''         
-                    # Supprimer seulement les containers spécifiques
+                    # Supprimer les old containers
                     docker rm -f portfolio_backend portfolio_frontend || true
                     
-                    # Redémarrer depuis docker-compose
-                    docker compose up -d
+                    # Redémarrer avec docker-compose
+                    docker-compose up -d
                 '''
             }
         }
-
     }
 
     post {
