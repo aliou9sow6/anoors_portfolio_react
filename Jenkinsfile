@@ -34,12 +34,8 @@ pipeline {
 
             stage('Quality Gate') {
                 steps {
-                    withSonarQubeEnv('sonarqube-server') {
-                        withEnv(["SONAR_HOST_URL=http://sonarqube:9000"]) {
-                            timeout(time: 5, unit: 'MINUTES') {
-                                waitForQualityGate abortPipeline: true
-                            }
-                        }
+                    timeout(time: 5, unit: 'MINUTES') {
+                        waitForQualityGate abortPipeline: true
                     }
                 }
             }
