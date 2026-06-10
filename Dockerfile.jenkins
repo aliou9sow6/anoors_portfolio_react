@@ -13,4 +13,4 @@ RUN apt-get update && \
     usermod -aG docker jenkins && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-USER jenkins
+# USER jenkins
