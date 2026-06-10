@@ -94,12 +94,24 @@ pipeline {
 
         stage('Deploy Application') {
             steps {
-                sh '''         
-                    # Supprimer les old containers
-                    docker rm -f portfolio_backend portfolio_frontend || true
-                    
-                    # Redémarrer avec docker-compose
-                    docker-compose up -d
+                sh '''
+                    compose_cmd() {
+                      if command -v docker-compose >/dev/null 2>&1; then
+                        docker-compose "$@"
+                      elif docker compose version >/dev/null 2>&1; then
+                        docker compose "$@"
+                      else
+                        docker run --rm \
+                          -v /var/run/docker.sock:/var/run/docker.sock \
+                          -v "$PWD":/workdir \
+                          -w /workdir \
+                          docker/compose:latest "$@"
+                      fi
+                    }
+
+                    # Restart only application services using compose
+                    compose_cmd -f docker-compose.yml down --remove-orphans backend frontend || true
+                    compose_cmd -f docker-compose.yml up -d backend frontend
                 '''
             }
         }
