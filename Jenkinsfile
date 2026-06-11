@@ -95,11 +95,11 @@ pipeline {
         stage('Deploy Application') {
             steps {
                 sh '''         
-                    # Supprimer les old containers applicatifs
-                    docker rm -f portfolio_backend portfolio_frontend || true
+                    # Supprimer les old containers applicatifs et dépendances orphelines
+                    docker rm -f portfolio_backend portfolio_frontend portfolio_mongodb || true
                     
                     # Redémarrer les SERVICES APPLICATIFS uniquement
-                    docker-compose up -d backend frontend
+                    docker-compose up -d --remove-orphans backend frontend
                 '''
             }
         }
