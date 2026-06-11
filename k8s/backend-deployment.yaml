@@ -17,8 +17,8 @@ spec:
     spec:
       containers:
       - name: backend
-        image: anoor9s6/portfolio-backend:latest
-        imagePullPolicy: Always
+        image: portfolio-backend:v1
+        imagePullPolicy: Never
         ports:
         - containerPort: 5000
           name: http
@@ -27,6 +27,8 @@ spec:
           value: "production"
         - name: PORT
           value: "5000"
+        - name: MONGODB_URI
+          value: "mongodb://admin:password123@portfolio-mongodb:27017/portfolio_db?authSource=admin"
         resources:
           requests:
             memory: "128Mi"

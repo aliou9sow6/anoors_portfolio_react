@@ -17,8 +17,8 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: anoor9s6/portfolio-frontend:latest
-        imagePullPolicy: Always
+        image: portfolio-frontend:v1
+        imagePullPolicy: Never
         ports:
         - containerPort: 80
           name: http

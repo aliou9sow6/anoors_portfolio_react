@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: portfolio-mongodb
+  namespace: portfolio
+  labels:
+    app: portfolio-mongodb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: portfolio-mongodb
+  template:
+    metadata:
+      labels:
+        app: portfolio-mongodb
+    spec:
+      containers:
+      - name: mongodb
+        image: mongo:7-jammy
+        ports:
+        - containerPort: 27017
+        env:
+        - name: MONGO_INITDB_ROOT_USERNAME
+          value: "admin"
+        - name: MONGO_INITDB_ROOT_PASSWORD
+          value: "password123"
+        - name: MONGO_INITDB_DATABASE
+          value: "portfolio_db"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: portfolio-mongodb
+  namespace: portfolio
+spec:
+  selector:
+    app: portfolio-mongodb
+  ports:
+  - protocol: TCP
+    port: 27017
+    targetPort: 27017
+  type: ClusterIP

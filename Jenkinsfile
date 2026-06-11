@@ -1,6 +1,19 @@
 pipeline {
     agent any
 
+    parameters {
+        choice(
+            name: 'DEPLOY_TARGET',
+            choices: ['kubernetes', 'docker-compose'],
+            description: 'Cible de déploiement : Kubernetes (kubectl) ou Docker Compose (local)'
+        )
+        string(
+            name: 'K8S_NAMESPACE',
+            defaultValue: 'portfolio',
+            description: 'Namespace Kubernetes cible'
+        )
+    }
+
     environment {
         DOCKERHUB_NAMESPACE = 'anoor9s6'
 
@@ -11,7 +24,8 @@ pipeline {
         FRONTEND_LATEST = "${DOCKERHUB_NAMESPACE}/portfolio-frontend:latest"
 
         DOCKERHUB_CREDENTIAL_ID = 'dockerhub-creds'
-        SONAR_SERVER = 'sonarqube-server'
+        SONAR_SERVER    = 'sonarqube-server'
+        KUBECONFIG_ID   = 'kubeconfig'   // ID du credential Jenkins de type "Secret file" contenant le kubeconfig
     }
 
         stages {
@@ -92,13 +106,54 @@ pipeline {
             }
         }
 
-        stage('Deploy Application') {
+        stage('Deploy to Kubernetes') {
+            when {
+                expression { params.DEPLOY_TARGET == 'kubernetes' }
+            }
             steps {
-                sh '''         
-                    # Supprimer les old containers applicatifs et dépendances orphelines
+                withCredentials([file(credentialsId: "${KUBECONFIG_ID}", variable: 'KUBECONFIG_FILE')]) {
+                    sh '''
+                        # Copier le kubeconfig et remplacer 127.0.0.1 par host-gateway
+                        # (nécessaire car Jenkins tourne dans un container Docker)
+                        cp $KUBECONFIG_FILE /tmp/kubeconfig-patched
+                        sed -i 's|https://127.0.0.1|https://host.docker.internal|g' /tmp/kubeconfig-patched
+                        export KUBECONFIG=/tmp/kubeconfig-patched
+
+                        # Créer le namespace s'il n'existe pas encore
+                        kubectl apply -f k8s/namespace.yaml
+
+                        # Appliquer tous les manifests
+                        kubectl apply -f k8s/backend-deployment.yaml
+                        kubectl apply -f k8s/backend-service.yaml
+                        kubectl apply -f k8s/frontend-deployment.yaml
+                        kubectl apply -f k8s/frontend-service.yaml
+                        kubectl apply -f k8s/ingress.yaml
+
+                        # Forcer le rollout pour récupérer les nouvelles images :latest
+                        kubectl rollout restart deployment/portfolio-backend  -n $K8S_NAMESPACE
+                        kubectl rollout restart deployment/portfolio-frontend -n $K8S_NAMESPACE
+
+                        # Attendre que les déploiements soient stables
+                        kubectl rollout status deployment/portfolio-backend  -n $K8S_NAMESPACE --timeout=120s
+                        kubectl rollout status deployment/portfolio-frontend -n $K8S_NAMESPACE --timeout=120s
+
+                        # Nettoyage
+                        rm -f /tmp/kubeconfig-patched
+                    '''
+                }
+            }
+        }
+
+        stage('Deploy with Docker Compose') {
+            when {
+                expression { params.DEPLOY_TARGET == 'docker-compose' }
+            }
+            steps {
+                sh '''
+                    # Supprimer les anciens containers applicatifs
                     docker rm -f portfolio_backend portfolio_frontend portfolio_mongodb || true
-                    
-                    # Redémarrer les SERVICES APPLICATIFS uniquement
+
+                    # Redémarrer les services applicatifs uniquement
                     docker-compose up -d --remove-orphans backend frontend
                 '''
             }
