@@ -107,23 +107,50 @@ pipeline {
         }
 
         stage('Deploy to Kubernetes') {
+            when {
+                expression { params.DEPLOY_TARGET == 'kubernetes' }
+            }
             steps {
-                withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG')]) {
+                withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')]) {
                     sh '''
-                        # Run kubectl inside a container so the agent doesn't need kubectl installed
-                        # Mount kubeconfig and workspace into the container
+                        # alpine/k8s contient kubectl + sh + sed
+                        # On patche l'adresse 127.0.0.1 → host.docker.internal
+                        # pour que le container Jenkins puisse atteindre l'API server de Docker Desktop
                         docker run --rm \
-                          -v "$KUBECONFIG":/root/.kube/config:ro \
-                          -v "$(pwd)":/work -w /work \
-                          bitnami/kubectl:latest sh -c "\
-                            kubectl cluster-info && \
-                            kubectl config current-context && \
-                            kubectl apply -f k8s/namespace.yaml || true && \
-                            kubectl apply -f k8s/ -n $K8S_NAMESPACE && \
-                            kubectl rollout status deployment/frontend -n $K8S_NAMESPACE --timeout=5m || true && \
-                            kubectl rollout status deployment/backend -n $K8S_NAMESPACE --timeout=5m || true && \
-                            kubectl get pods -n $K8S_NAMESPACE && \
-                            kubectl get svc -n $K8S_NAMESPACE"
+                          --add-host=host.docker.internal:host-gateway \
+                          -v "$KUBECONFIG_FILE":/tmp/kubeconfig-orig:ro \
+                          -v "$(pwd)":/work \
+                          -w /work \
+                          alpine/k8s:1.31.4 sh -c "
+                            cp /tmp/kubeconfig-orig /tmp/kubeconfig &&
+                            sed -i 's|https://127.0.0.1|https://host.docker.internal|g' /tmp/kubeconfig &&
+                            export KUBECONFIG=/tmp/kubeconfig &&
+
+                            echo '=== Cluster info ===' &&
+                            kubectl cluster-info &&
+
+                            echo '=== Application du namespace ===' &&
+                            kubectl apply -f k8s/namespace.yaml &&
+
+                            echo '=== Application des manifests ===' &&
+                            kubectl apply -f k8s/backend-deployment.yaml &&
+                            kubectl apply -f k8s/backend-service.yaml &&
+                            kubectl apply -f k8s/frontend-deployment.yaml &&
+                            kubectl apply -f k8s/frontend-service.yaml &&
+                            kubectl apply -f k8s/ingress.yaml &&
+
+                            echo '=== Rollout restart ===' &&
+                            kubectl rollout restart deployment/portfolio-backend  -n portfolio &&
+                            kubectl rollout restart deployment/portfolio-frontend -n portfolio &&
+
+                            echo '=== Attente stabilisation ===' &&
+                            kubectl rollout status deployment/portfolio-backend  -n portfolio --timeout=120s &&
+                            kubectl rollout status deployment/portfolio-frontend -n portfolio --timeout=120s &&
+
+                            echo '=== Etat final ===' &&
+                            kubectl get pods -n portfolio &&
+                            kubectl get svc  -n portfolio
+                          "
                     '''
                 }
             }
