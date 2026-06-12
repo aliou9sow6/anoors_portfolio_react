@@ -1,0 +1,84 @@
+name: Build and deploy to Kubernetes (Docker Hub)
+on:
+  push:
+    branches: [ github_act ]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.vars.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Set SHA output
+        id: vars
+        run: echo "::set-output name=sha::${GITHUB_SHA}"
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          registry: docker.io
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push backend
+        uses: docker/build-push-action@v4
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/anoors-backend:${{ github.sha }}
+
+      - name: Build and push frontend
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/anoors-frontend:${{ github.sha }}
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'v1.30.0'
+
+      - name: Decode kubeconfig
+        env:
+          KUBECONFIG_BASE64: ${{ secrets.KUBECONFIG_BASE64 }}
+        run: |
+          mkdir -p $HOME/.kube
+          echo "$KUBECONFIG_BASE64" | base64 --decode > $HOME/.kube/config
+
+      - name: Ensure imagePullPolicy is pullable (backend)
+        run: |
+          kubectl -n portfolio patch deployment portfolio-backend --type='strategic' --patch '{"spec":{"template":{"spec":{"containers":[{"name":"backend","imagePullPolicy":"IfNotPresent"}]}}}}' || true
+
+      - name: Ensure imagePullPolicy is pullable (frontend)
+        run: |
+          kubectl -n portfolio patch deployment portfolio-frontend --type='strategic' --patch '{"spec":{"template":{"spec":{"containers":[{"name":"frontend","imagePullPolicy":"IfNotPresent"}]}}}}' || true
+
+      - name: Update backend image
+        run: |
+          BACKEND_IMAGE=docker.io/${{ secrets.DOCKERHUB_USERNAME }}/anoors-backend:${{ github.sha }}
+          kubectl -n portfolio set image deployment/portfolio-backend backend=$BACKEND_IMAGE
+
+      - name: Update frontend image
+        run: |
+          FRONTEND_IMAGE=docker.io/${{ secrets.DOCKERHUB_USERNAME }}/anoors-frontend:${{ github.sha }}
+          kubectl -n portfolio set image deployment/portfolio-frontend frontend=$FRONTEND_IMAGE
+
+      - name: Apply manifests (optional)
+        run: kubectl apply -f k8s/ -n portfolio || true
