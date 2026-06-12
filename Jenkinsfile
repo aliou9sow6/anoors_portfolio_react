@@ -114,18 +114,15 @@ pipeline {
             steps {
                 withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')]) {
                     sh '''
-                        # Debug: vérifier le répertoire courant et le contenu du workspace
-                        pwd
-                        ls -la
-                        ls -la /var/jenkins_home/workspace/full_stack_portfolio || true
-
-                        # Utilise une image Kubectl valide
-                        docker run --rm \
-                        -v "$KUBECONFIG_FILE":/root/.kube/config:ro \
-                        -v "$(pwd)":/work \
-                        -w /work \
-                        bitnami/kubectl:latest \
-                        apply -f /work/k8s/ -n $K8S_NAMESPACE
+                        # Utilise une image Kubectl valide et archive les manifests dans le conteneur
+                        tar -C "$(pwd)" -cf - k8s | docker run --rm -i \
+                          -v "$KUBECONFIG_FILE":/root/.kube/config:ro \
+                          -w /work \
+                          bitnami/kubectl:latest sh -eux -c '
+                            mkdir -p /work
+                            tar -C /work -xf -
+                            kubectl apply -f /work/k8s -n $K8S_NAMESPACE
+                          '
                     '''
                 }
             }
