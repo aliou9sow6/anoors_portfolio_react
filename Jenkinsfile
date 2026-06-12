@@ -110,16 +110,16 @@ pipeline {
             when {
                 expression { params.DEPLOY_TARGET == 'kubernetes' }
             }
-            
+
             steps {
                 withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')]) {
                     sh '''
-                        # Utilise l'image alpine/k8s qui contient kubectl
+                        # Utilise une image Kubectl valide
                         docker run --rm \
                         -v "$KUBECONFIG_FILE":/root/.kube/config:ro \
                         -v "$(pwd)":/work \
                         -w /work \
-                        alpine/k8s:latest \
+                        bitnami/kubectl:latest \
                         kubectl apply -f k8s/ -n portfolio
                     '''
                 }
