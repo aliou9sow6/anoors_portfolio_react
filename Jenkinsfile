@@ -113,44 +113,14 @@ pipeline {
             steps {
                 withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')]) {
                     sh '''
-                        # alpine/k8s contient kubectl + sh + sed
-                        # On patche l'adresse 127.0.0.1 → host.docker.internal
-                        # pour que le container Jenkins puisse atteindre l'API server de Docker Desktop
+                        # alpine/k8s contains kubectl + sh + sed
+                        # Mount the provided credential path and handle both file and directory
                         docker run --rm \
                           --add-host=host.docker.internal:host-gateway \
-                          -v "$KUBECONFIG_FILE":/tmp/kubeconfig-orig:ro \
+                          -v "$KUBECONFIG_FILE":/tmp/kubecreds:ro \
                           -v "$(pwd)":/work \
                           -w /work \
-                          alpine/k8s:1.31.4 sh -c "
-                            cp /tmp/kubeconfig-orig /tmp/kubeconfig &&
-                            sed -i 's|https://127.0.0.1|https://host.docker.internal|g' /tmp/kubeconfig &&
-                            export KUBECONFIG=/tmp/kubeconfig &&
-
-                            echo '=== Cluster info ===' &&
-                            kubectl cluster-info &&
-
-                            echo '=== Application du namespace ===' &&
-                            kubectl apply -f k8s/namespace.yaml &&
-
-                            echo '=== Application des manifests ===' &&
-                            kubectl apply -f k8s/backend-deployment.yaml &&
-                            kubectl apply -f k8s/backend-service.yaml &&
-                            kubectl apply -f k8s/frontend-deployment.yaml &&
-                            kubectl apply -f k8s/frontend-service.yaml &&
-                            kubectl apply -f k8s/ingress.yaml &&
-
-                            echo '=== Rollout restart ===' &&
-                            kubectl rollout restart deployment/portfolio-backend  -n portfolio &&
-                            kubectl rollout restart deployment/portfolio-frontend -n portfolio &&
-
-                            echo '=== Attente stabilisation ===' &&
-                            kubectl rollout status deployment/portfolio-backend  -n portfolio --timeout=120s &&
-                            kubectl rollout status deployment/portfolio-frontend -n portfolio --timeout=120s &&
-
-                            echo '=== Etat final ===' &&
-                            kubectl get pods -n portfolio &&
-                            kubectl get svc  -n portfolio
-                          "
+                          alpine/k8s:1.31.4 sh -eux -c '\n                            KUBE_SRC=/tmp/kubecreds\n                            if [ -d "$KUBE_SRC" ]; then\n                              KUBEFILE=$(ls -1 "$KUBE_SRC" | head -n1)\n                              KUBE_SRC="$KUBE_SRC/$KUBEFILE"\n                            fi\n\n                            cp "$KUBE_SRC" /tmp/kubeconfig\n                            sed -i "s|https://127.0.0.1|https://host.docker.internal|g" /tmp/kubeconfig || true\n                            export KUBECONFIG=/tmp/kubeconfig\n\n                            echo "=== Cluster info ==="\n                            kubectl cluster-info || true\n\n                            echo "=== Applying namespace ==="\n                            kubectl apply -f k8s/namespace.yaml\n\n                            echo "=== Applying manifests ==="\n                            kubectl apply -f k8s/backend-deployment.yaml -n $K8S_NAMESPACE || true\n                            kubectl apply -f k8s/backend-service.yaml -n $K8S_NAMESPACE || true\n                            kubectl apply -f k8s/frontend-deployment.yaml -n $K8S_NAMESPACE || true\n                            kubectl apply -f k8s/frontend-service.yaml -n $K8S_NAMESPACE || true\n                            kubectl apply -f k8s/ingress.yaml -n $K8S_NAMESPACE || true\n\n                            echo "=== Rollout restart ==="\n                            kubectl rollout restart deployment/portfolio-backend -n $K8S_NAMESPACE || true\n                            kubectl rollout restart deployment/portfolio-frontend -n $K8S_NAMESPACE || true\n\n                            echo "=== Waiting stabilization ==="\n                            kubectl rollout status deployment/portfolio-backend -n $K8S_NAMESPACE --timeout=120s || true\n                            kubectl rollout status deployment/portfolio-frontend -n $K8S_NAMESPACE --timeout=120s || true\n\n                            echo "=== Final state ==="\n                            kubectl get pods -n $K8S_NAMESPACE || true\n                            kubectl get svc -n $K8S_NAMESPACE || true\n                          '
                     '''
                 }
             }
