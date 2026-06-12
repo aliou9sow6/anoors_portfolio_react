@@ -115,7 +115,7 @@ pipeline {
                 withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')]) {
                     sh '''
                         # Utilise une image Kubectl valide et archive les manifests dans le conteneur
-                        tar -C "$(pwd)" -cf - k8s | docker run --rm -i \
+                        tar -C "$(pwd)/k8s" -cf - . | docker run --rm -i \
                           --entrypoint sh \
                           -u 0 \
                           -v "$KUBECONFIG_FILE":/root/.kube/config:ro \
