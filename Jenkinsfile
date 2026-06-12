@@ -114,6 +114,11 @@ pipeline {
             steps {
                 withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')]) {
                     sh '''
+                        # Debug: vérifier le répertoire courant et le contenu du workspace
+                        pwd
+                        ls -la
+                        ls -la /var/jenkins_home/workspace/full_stack_portfolio || true
+
                         # Utilise une image Kubectl valide
                         docker run --rm \
                         -v "$KUBECONFIG_FILE":/root/.kube/config:ro \
