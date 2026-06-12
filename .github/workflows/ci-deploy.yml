@@ -70,6 +70,14 @@ jobs:
           mkdir -p $HOME/.kube
           echo "$KUBECONFIG_BASE64" | base64 --decode > $HOME/.kube/config
 
+      - name: Create namespace
+        run: |
+          kubectl create namespace portfolio || true
+
+      - name: Apply GHA deployer SA & RBAC
+        run: |
+          kubectl apply -f k8s/gha-deployer.yaml || true
+
       - name: Ensure imagePullPolicy is pullable (backend)
         run: |
           kubectl -n portfolio patch deployment portfolio-backend --type='strategic' --patch '{"spec":{"template":{"spec":{"containers":[{"name":"backend","imagePullPolicy":"IfNotPresent"}]}}}}' || true
