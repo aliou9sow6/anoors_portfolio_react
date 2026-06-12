@@ -120,7 +120,7 @@ pipeline {
                         -v "$(pwd)":/work \
                         -w /work \
                         bitnami/kubectl:latest \
-                        apply -f k8s/ -n portfolio
+                        apply -f /work/k8s/ -n $K8S_NAMESPACE
                     '''
                 }
             }
