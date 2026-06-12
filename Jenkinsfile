@@ -110,26 +110,20 @@ pipeline {
             steps {
                 withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG')]) {
                     sh '''
-                        # Utiliser le kubeconfig
-                        export KUBECONFIG=$KUBECONFIG
-                        
-                        # Vérifier la connexion
-                        kubectl cluster-info
-                        kubectl config current-context
-                        
-                        # Créer le namespace si besoin
-                        kubectl create namespace portfolio || true
-                        
-                        # Appliquer les manifests K8s
-                        kubectl apply -f k8s/deployment.yaml -n portfolio
-                        kubectl apply -f k8s/service.yaml -n portfolio
-                        
-                        # Vérifier le déploiement
-                        kubectl rollout status deployment/portfolio -n portfolio --timeout=5m
-                        
-                        # Afficher le status
-                        kubectl get pods -n portfolio
-                        kubectl get svc -n portfolio
+                        # Run kubectl inside a container so the agent doesn't need kubectl installed
+                        # Mount kubeconfig and workspace into the container
+                        docker run --rm \
+                          -v "$KUBECONFIG":/root/.kube/config:ro \
+                          -v "$(pwd)":/work -w /work \
+                          bitnami/kubectl:latest sh -c "\
+                            kubectl cluster-info && \
+                            kubectl config current-context && \
+                            kubectl apply -f k8s/namespace.yaml || true && \
+                            kubectl apply -f k8s/ -n $K8S_NAMESPACE && \
+                            kubectl rollout status deployment/frontend -n $K8S_NAMESPACE --timeout=5m || true && \
+                            kubectl rollout status deployment/backend -n $K8S_NAMESPACE --timeout=5m || true && \
+                            kubectl get pods -n $K8S_NAMESPACE && \
+                            kubectl get svc -n $K8S_NAMESPACE"
                     '''
                 }
             }
