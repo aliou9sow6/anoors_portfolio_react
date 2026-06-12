@@ -107,38 +107,29 @@ pipeline {
         }
 
         stage('Deploy to Kubernetes') {
-            when {
-                expression { params.DEPLOY_TARGET == 'kubernetes' }
-            }
             steps {
-                withCredentials([file(credentialsId: "${KUBECONFIG_ID}", variable: 'KUBECONFIG_FILE')]) {
+                withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG')]) {
                     sh '''
-                        # Copier le kubeconfig et remplacer 127.0.0.1 par host-gateway
-                        # (nécessaire car Jenkins tourne dans un container Docker)
-                        cp $KUBECONFIG_FILE /tmp/kubeconfig-patched
-                        sed -i 's|https://127.0.0.1|https://host.docker.internal|g' /tmp/kubeconfig-patched
-                        export KUBECONFIG=/tmp/kubeconfig-patched
-
-                        # Créer le namespace s'il n'existe pas encore
-                        kubectl apply -f k8s/namespace.yaml
-
-                        # Appliquer tous les manifests
-                        kubectl apply -f k8s/backend-deployment.yaml
-                        kubectl apply -f k8s/backend-service.yaml
-                        kubectl apply -f k8s/frontend-deployment.yaml
-                        kubectl apply -f k8s/frontend-service.yaml
-                        kubectl apply -f k8s/ingress.yaml
-
-                        # Forcer le rollout pour récupérer les nouvelles images :latest
-                        kubectl rollout restart deployment/portfolio-backend  -n $K8S_NAMESPACE
-                        kubectl rollout restart deployment/portfolio-frontend -n $K8S_NAMESPACE
-
-                        # Attendre que les déploiements soient stables
-                        kubectl rollout status deployment/portfolio-backend  -n $K8S_NAMESPACE --timeout=120s
-                        kubectl rollout status deployment/portfolio-frontend -n $K8S_NAMESPACE --timeout=120s
-
-                        # Nettoyage
-                        rm -f /tmp/kubeconfig-patched
+                        # Utiliser le kubeconfig
+                        export KUBECONFIG=$KUBECONFIG
+                        
+                        # Vérifier la connexion
+                        kubectl cluster-info
+                        kubectl config current-context
+                        
+                        # Créer le namespace si besoin
+                        kubectl create namespace portfolio || true
+                        
+                        # Appliquer les manifests K8s
+                        kubectl apply -f k8s/deployment.yaml -n portfolio
+                        kubectl apply -f k8s/service.yaml -n portfolio
+                        
+                        # Vérifier le déploiement
+                        kubectl rollout status deployment/portfolio -n portfolio --timeout=5m
+                        
+                        # Afficher le status
+                        kubectl get pods -n portfolio
+                        kubectl get svc -n portfolio
                     '''
                 }
             }
