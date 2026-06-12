@@ -118,13 +118,23 @@ pipeline {
                         # --add-host permet au container d'atteindre l'API server Docker Desktop via host.docker.internal
                         docker run --rm \
                           --add-host=host.docker.internal:host-gateway \
-                          -v "$KUBECONFIG_FILE":/tmp/kubeconfig-orig:ro \
+                          -v "$KUBECONFIG_FILE":/tmp/kubecreds:ro \
                           -v "$(pwd)":/work \
                           -w /work \
                           alpine/k8s:1.31.4 sh -c '
-                            cp /tmp/kubeconfig-orig /tmp/kubeconfig &&
-                            sed -i "s|https://127.0.0.1|https://host.docker.internal|g" /tmp/kubeconfig &&
-                            export KUBECONFIG=/tmp/kubeconfig &&
+                            KUBE_SRC=/tmp/kubecreds
+                            if [ -d "$KUBE_SRC" ]; then
+                              KUBEFILE=$(find "$KUBE_SRC" -maxdepth 1 -type f | head -n1)
+                              if [ -z "$KUBEFILE" ]; then
+                                echo "ERROR: No kubeconfig file found in $KUBE_SRC" >&2
+                                exit 1
+                              fi
+                              KUBE_SRC="$KUBEFILE"
+                            fi
+
+                            cp "$KUBE_SRC" /tmp/kubeconfig
+                            sed -i "s|https://127.0.0.1|https://host.docker.internal|g" /tmp/kubeconfig || true
+                            export KUBECONFIG=/tmp/kubeconfig
 
                             echo "=== Cluster info ===" &&
                             kubectl cluster-info &&
@@ -133,23 +143,23 @@ pipeline {
                             kubectl apply -f k8s/namespace.yaml &&
 
                             echo "=== Manifests ===" &&
-                            kubectl apply -f k8s/backend-deployment.yaml &&
-                            kubectl apply -f k8s/backend-service.yaml &&
-                            kubectl apply -f k8s/frontend-deployment.yaml &&
-                            kubectl apply -f k8s/frontend-service.yaml &&
-                            kubectl apply -f k8s/ingress.yaml &&
+                            kubectl apply -f k8s/backend-deployment.yaml -n $K8S_NAMESPACE &&
+                            kubectl apply -f k8s/backend-service.yaml -n $K8S_NAMESPACE &&
+                            kubectl apply -f k8s/frontend-deployment.yaml -n $K8S_NAMESPACE &&
+                            kubectl apply -f k8s/frontend-service.yaml -n $K8S_NAMESPACE &&
+                            kubectl apply -f k8s/ingress.yaml -n $K8S_NAMESPACE &&
 
                             echo "=== Rollout restart ===" &&
-                            kubectl rollout restart deployment/portfolio-backend  -n portfolio &&
-                            kubectl rollout restart deployment/portfolio-frontend -n portfolio &&
+                            kubectl rollout restart deployment/portfolio-backend -n $K8S_NAMESPACE &&
+                            kubectl rollout restart deployment/portfolio-frontend -n $K8S_NAMESPACE &&
 
                             echo "=== Attente stabilisation ===" &&
-                            kubectl rollout status deployment/portfolio-backend  -n portfolio --timeout=120s &&
-                            kubectl rollout status deployment/portfolio-frontend -n portfolio --timeout=120s &&
+                            kubectl rollout status deployment/portfolio-backend -n $K8S_NAMESPACE --timeout=120s &&
+                            kubectl rollout status deployment/portfolio-frontend -n $K8S_NAMESPACE --timeout=120s &&
 
                             echo "=== Etat final ===" &&
-                            kubectl get pods -n portfolio &&
-                            kubectl get svc  -n portfolio
+                            kubectl get pods -n $K8S_NAMESPACE &&
+                            kubectl get svc -n $K8S_NAMESPACE
                           '
                     '''
                 }
