@@ -117,9 +117,9 @@ pipeline {
                         # Utilise une image Kubectl valide et archive les manifests dans le conteneur
                         tar -C "$(pwd)" -cf - k8s | docker run --rm -i \
                           --entrypoint sh \
+                          -u 0 \
                           -v "$KUBECONFIG_FILE":/root/.kube/config:ro \
-                          -w /work \
-                          bitnami/kubectl:latest -eux -c "mkdir -p /work && tar -C /work -xf - && kubectl apply -f /work/k8s -n $K8S_NAMESPACE"
+                          bitnami/kubectl:latest -eux -c "mkdir -p /tmp/k8s && tar -C /tmp/k8s -xf - && kubectl apply -f /tmp/k8s -n $K8S_NAMESPACE"
                     '''
                 }
             }
