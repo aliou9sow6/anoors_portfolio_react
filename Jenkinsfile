@@ -120,7 +120,7 @@ pipeline {
                         -v "$(pwd)":/work \
                         -w /work \
                         bitnami/kubectl:latest \
-                        kubectl apply -f k8s/ -n portfolio
+                        apply -f k8s/ -n portfolio
                     '''
                 }
             }
