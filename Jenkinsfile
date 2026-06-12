@@ -110,17 +110,17 @@ pipeline {
             when {
                 expression { params.DEPLOY_TARGET == 'kubernetes' }
             }
+            
             steps {
                 withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')]) {
                     sh '''
-                        # alpine/k8s contains kubectl + sh + sed
-                        # Mount the provided credential path and handle both file and directory
+                        # Utilise l'image alpine/k8s qui contient kubectl
                         docker run --rm \
-                          --add-host=host.docker.internal:host-gateway \
-                          -v "$KUBECONFIG_FILE":/tmp/kubecreds:ro \
-                          -v "$(pwd)":/work \
-                          -w /work \
-                          alpine/k8s:1.31.4 sh -eux -c '\n                            KUBE_SRC=/tmp/kubecreds\n                            if [ -d "$KUBE_SRC" ]; then\n                              KUBEFILE=$(ls -1 "$KUBE_SRC" | head -n1)\n                              KUBE_SRC="$KUBE_SRC/$KUBEFILE"\n                            fi\n\n                            cp "$KUBE_SRC" /tmp/kubeconfig\n                            sed -i "s|https://127.0.0.1|https://host.docker.internal|g" /tmp/kubeconfig || true\n                            export KUBECONFIG=/tmp/kubeconfig\n\n                            echo "=== Cluster info ==="\n                            kubectl cluster-info || true\n\n                            echo "=== Applying namespace ==="\n                            kubectl apply -f k8s/namespace.yaml\n\n                            echo "=== Applying manifests ==="\n                            kubectl apply -f k8s/backend-deployment.yaml -n $K8S_NAMESPACE || true\n                            kubectl apply -f k8s/backend-service.yaml -n $K8S_NAMESPACE || true\n                            kubectl apply -f k8s/frontend-deployment.yaml -n $K8S_NAMESPACE || true\n                            kubectl apply -f k8s/frontend-service.yaml -n $K8S_NAMESPACE || true\n                            kubectl apply -f k8s/ingress.yaml -n $K8S_NAMESPACE || true\n\n                            echo "=== Rollout restart ==="\n                            kubectl rollout restart deployment/portfolio-backend -n $K8S_NAMESPACE || true\n                            kubectl rollout restart deployment/portfolio-frontend -n $K8S_NAMESPACE || true\n\n                            echo "=== Waiting stabilization ==="\n                            kubectl rollout status deployment/portfolio-backend -n $K8S_NAMESPACE --timeout=120s || true\n                            kubectl rollout status deployment/portfolio-frontend -n $K8S_NAMESPACE --timeout=120s || true\n\n                            echo "=== Final state ==="\n                            kubectl get pods -n $K8S_NAMESPACE || true\n                            kubectl get svc -n $K8S_NAMESPACE || true\n                          '
+                        -v "$KUBECONFIG_FILE":/root/.kube/config:ro \
+                        -v "$(pwd)":/work \
+                        -w /work \
+                        alpine/k8s:latest \
+                        kubectl apply -f k8s/ -n portfolio
                     '''
                 }
             }
