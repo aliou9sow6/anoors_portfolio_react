@@ -114,13 +114,43 @@ pipeline {
             steps {
                 withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')]) {
                     sh '''
-                        # Utilise une image Kubectl valide
+                        # alpine/k8s inclut kubectl + sh + sed (contrairement à bitnami/kubectl qui est distroless)
+                        # --add-host permet au container d'atteindre l'API server Docker Desktop via host.docker.internal
                         docker run --rm \
-                        -v "$KUBECONFIG_FILE":/root/.kube/config:ro \
-                        -v "$(pwd)":/work \
-                        -w /work \
-                        bitnami/kubectl:latest \
-                        apply -f /work/k8s/ -n $K8S_NAMESPACE
+                          --add-host=host.docker.internal:host-gateway \
+                          -v "$KUBECONFIG_FILE":/tmp/kubeconfig-orig:ro \
+                          -v "$(pwd)":/work \
+                          -w /work \
+                          alpine/k8s:1.31.4 sh -c '
+                            cp /tmp/kubeconfig-orig /tmp/kubeconfig &&
+                            sed -i "s|https://127.0.0.1|https://host.docker.internal|g" /tmp/kubeconfig &&
+                            export KUBECONFIG=/tmp/kubeconfig &&
+
+                            echo "=== Cluster info ===" &&
+                            kubectl cluster-info &&
+
+                            echo "=== Namespace ===" &&
+                            kubectl apply -f k8s/namespace.yaml &&
+
+                            echo "=== Manifests ===" &&
+                            kubectl apply -f k8s/backend-deployment.yaml &&
+                            kubectl apply -f k8s/backend-service.yaml &&
+                            kubectl apply -f k8s/frontend-deployment.yaml &&
+                            kubectl apply -f k8s/frontend-service.yaml &&
+                            kubectl apply -f k8s/ingress.yaml &&
+
+                            echo "=== Rollout restart ===" &&
+                            kubectl rollout restart deployment/portfolio-backend  -n portfolio &&
+                            kubectl rollout restart deployment/portfolio-frontend -n portfolio &&
+
+                            echo "=== Attente stabilisation ===" &&
+                            kubectl rollout status deployment/portfolio-backend  -n portfolio --timeout=120s &&
+                            kubectl rollout status deployment/portfolio-frontend -n portfolio --timeout=120s &&
+
+                            echo "=== Etat final ===" &&
+                            kubectl get pods -n portfolio &&
+                            kubectl get svc  -n portfolio
+                          '
                     '''
                 }
             }
