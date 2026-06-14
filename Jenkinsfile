@@ -106,21 +106,21 @@ pipeline {
             }
         }
 
-        stage('Debug Kubeconfig') {
+        stage('Test Kubernetes Access') {
             steps {
                 withCredentials([
                     file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')
                 ]) {
                     sh '''
-                        echo "KUBECONFIG_FILE=$KUBECONFIG_FILE"
-
-                        ls -l "$KUBECONFIG_FILE"
-
                         export KUBECONFIG="$KUBECONFIG_FILE"
 
-                        kubectl config get-contexts
+                        kubectl cluster-info
 
-                        kubectl config current-context
+                        kubectl get nodes
+
+                        kubectl get ns
+
+                        kubectl get pods -A
                     '''
                 }
             }
