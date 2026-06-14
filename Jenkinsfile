@@ -106,26 +106,11 @@ pipeline {
             }
         }
 
-        stage('Debug Kubeconfig') {
-            steps {
-                withCredentials([
-                    file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')
-                ]) {
-                    sh '''
-                        echo "KUBECONFIG_FILE=$KUBECONFIG_FILE"
-
-                        ls -l "$KUBECONFIG_FILE"
-
-                        export KUBECONFIG="$KUBECONFIG_FILE"
-
-                        kubectl config get-contexts
-
-                        kubectl config current-context
-                    '''
-                }
+        stage('Deploy to Kubernetes') {
+            when {
+                expression { params.DEPLOY_TARGET == 'kubernetes' }
             }
-        }
-        stage('Test Kubernetes Access') {
+
             steps {
                 withCredentials([
                     file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')
@@ -133,13 +118,9 @@ pipeline {
                     sh '''
                         export KUBECONFIG="$KUBECONFIG_FILE"
 
-                        kubectl cluster-info
+                        kubectl apply -f k8s/ -n "$K8S_NAMESPACE"
 
-                        kubectl get nodes
-
-                        kubectl get ns
-
-                        kubectl get pods -A
+                        kubectl get all -n "$K8S_NAMESPACE"
                     '''
                 }
             }
