@@ -131,7 +131,6 @@ pipeline {
                     file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')
                 ]) {
                     script {
-                        // Afficher le contenu du kubeconfig pour debug
                         sh '''
                             export KUBECONFIG="$KUBECONFIG_FILE"
 
