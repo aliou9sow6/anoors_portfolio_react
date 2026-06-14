@@ -130,17 +130,20 @@ pipeline {
                 withCredentials([
                     file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')
                 ]) {
-                    sh '''
-                        export KUBECONFIG="$KUBECONFIG_FILE"
+                    script {
+                        // Afficher le contenu du kubeconfig pour debug
+                        sh '''
+                            export KUBECONFIG="$KUBECONFIG_FILE"
 
-                        kubectl cluster-info
+                            kubectl cluster-info
 
-                        kubectl get nodes
+                            kubectl get nodes
 
-                        kubectl get ns
+                            kubectl get ns
 
-                        kubectl get pods -A
-                    '''
+                            kubectl get pods -A
+                        '''
+                    }
                 }
             }
         }
