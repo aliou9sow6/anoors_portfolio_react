@@ -114,7 +114,4 @@ portfolio-app/
 ```
 ## Integration the jenkins pipeline
 
-## Utilsation de Ngrok
-
-* ngrok : 
-
+## Utilisation de Ngrok 

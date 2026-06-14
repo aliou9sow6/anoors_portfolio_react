@@ -27,6 +27,8 @@ spec:
           value: "production"
         - name: PORT
           value: "5000"
+        - name: MONGODB_URI
+          value: "mongodb://admin:password123@portfolio-mongodb:27017/portfolio_db?authSource=admin"
         resources:
           requests:
             memory: "128Mi"
@@ -36,14 +38,14 @@ spec:
             cpu: "500m"
         livenessProbe:
           httpGet:
-            path: /projets
+            path: /api/test
             port: 5000
-          initialDelaySeconds: 10
+          initialDelaySeconds: 15
           periodSeconds: 10
           timeoutSeconds: 5
         readinessProbe:
           httpGet:
-            path: /projets
+            path: /api/test
             port: 5000
-          initialDelaySeconds: 5
+          initialDelaySeconds: 10
           periodSeconds: 5
