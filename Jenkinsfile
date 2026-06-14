@@ -106,6 +106,25 @@ pipeline {
             }
         }
 
+        stage('Debug Kubeconfig') {
+            steps {
+                withCredentials([
+                    file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')
+                ]) {
+                    sh '''
+                        echo "KUBECONFIG_FILE=$KUBECONFIG_FILE"
+
+                        ls -l "$KUBECONFIG_FILE"
+
+                        export KUBECONFIG="$KUBECONFIG_FILE"
+
+                        kubectl config get-contexts
+
+                        kubectl config current-context
+                    '''
+                }
+            }
+        }
         stage('Test Kubernetes Access') {
             steps {
                 withCredentials([
