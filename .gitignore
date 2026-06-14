@@ -19,3 +19,13 @@
 .env
 .vscode
 .idea
+
+# Terraform
+terraform/**/*.tfvars
+terraform/**/.terraform/
+terraform/**/.terraform.lock.hcl
+terraform/**/tfplan
+terraform/**/*.pem
+terraform/**/terraform_outputs.json
+terraform/scenario2-eks
+

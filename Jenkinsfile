@@ -170,7 +170,7 @@ pipeline {
               Durée     : ${currentBuild.durationString}
               URL       : ${env.BUILD_URL}
 
-              Consultez les logs : ${env.BUILD_URL}console
+              Consultez les logs : ${env.BUILD_URL}console 
                           """
       }
 
