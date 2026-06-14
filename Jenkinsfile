@@ -129,9 +129,7 @@ pipeline {
         }
 
         stage('Deploy with Docker Compose') {
-            when {
-                expression { params.DEPLOY_TARGET == 'docker-compose' }
-            }
+            
             steps {
                 sh '''
                     # Supprimer les anciens containers applicatifs
