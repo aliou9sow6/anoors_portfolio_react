@@ -106,18 +106,21 @@ pipeline {
             }
         }
 
-        stage('Deploy to Kubernetes') {
-            when {
-                expression { params.DEPLOY_TARGET == 'kubernetes' }
-            }
-
+        stage('Debug Kubeconfig') {
             steps {
-                withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')]) {
+                withCredentials([
+                    file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')
+                ]) {
                     sh '''
-                        # Try to use full path if not in PATH
-                        KUBECTL_BIN=$(which kubectl || echo "/usr/local/bin/kubectl")
+                        echo "KUBECONFIG_FILE=$KUBECONFIG_FILE"
+
+                        ls -l "$KUBECONFIG_FILE"
+
                         export KUBECONFIG="$KUBECONFIG_FILE"
-                        $KUBECTL_BIN apply -f k8s/ -n "$K8S_NAMESPACE"
+
+                        kubectl config get-contexts
+
+                        kubectl config current-context
                     '''
                 }
             }
