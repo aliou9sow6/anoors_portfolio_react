@@ -125,46 +125,7 @@ pipeline {
                 }
             }
         }
-        stage('Test Kubernetes Access') {
-            steps {
-                withCredentials([
-                    file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')
-                ]) {
-                    script {
-                        sh '''
-                            export KUBECONFIG="$KUBECONFIG_FILE"
 
-                            kubectl cluster-info
-
-                            kubectl get nodes
-
-                            kubectl get ns
-
-                            kubectl get pods -A
-                        '''
-                    }
-                }
-            }
-        }
-        stage('Test Kubernetes Access') {
-            steps {
-                withCredentials([
-                    file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')
-                ]) {
-                    sh '''
-                        export KUBECONFIG="$KUBECONFIG_FILE"
-
-                        kubectl cluster-info
-
-                        kubectl get nodes
-
-                        kubectl get ns
-
-                        kubectl get pods -A
-                    '''
-                }
-            }
-        }
         stage('Deploy with Docker Compose') {
             when {
                 expression { params.DEPLOY_TARGET == 'docker-compose' }
