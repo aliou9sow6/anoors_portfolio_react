@@ -117,10 +117,12 @@ pipeline {
                 ]) {
                     sh '''
                         export KUBECONFIG="$KUBECONFIG_FILE"
-
-                        kubectl apply -f k8s/ -n "$K8S_NAMESPACE"
-
-                        kubectl get all -n "$K8S_NAMESPACE"
+                        
+                        # Added --insecure-skip-tls-verify because the certificate is valid for 'localhost' 
+                        # but we are connecting via 'host.docker.internal' from the Jenkins container.
+                        kubectl apply --insecure-skip-tls-verify -f k8s/ -n "$K8S_NAMESPACE"
+                        
+                        kubectl get all --insecure-skip-tls-verify -n "$K8S_NAMESPACE"
                     '''
                 }
             }
