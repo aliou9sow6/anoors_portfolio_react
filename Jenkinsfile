@@ -114,13 +114,8 @@ pipeline {
             steps {
                 withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')]) {
                     sh '''
-                        # Utilise une image Kubectl valide et archive les manifests dans le conteneur
-                        tar -C "$(pwd)/k8s" -cf - . | docker run --rm -i \
-                          --entrypoint sh \
-                          -u 0 \
-                          -e KUBECONFIG=/tmp/kubeconfig \
-                          -v "$KUBECONFIG_FILE":/tmp/kubeconfig:ro \
-                          bitnami/kubectl:latest -eux -c "mkdir -p /tmp/k8s && tar -C /tmp/k8s -xf - && kubectl apply -f /tmp/k8s -n $K8S_NAMESPACE"
+                        export KUBECONFIG="$KUBECONFIG_FILE"
+                        kubectl apply -f k8s/ -n "$K8S_NAMESPACE"
                     '''
                 }
             }
