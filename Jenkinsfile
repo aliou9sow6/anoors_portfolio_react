@@ -114,8 +114,10 @@ pipeline {
             steps {
                 withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')]) {
                     sh '''
+                        # Try to use full path if not in PATH
+                        KUBECTL_BIN=$(which kubectl || echo "/usr/local/bin/kubectl")
                         export KUBECONFIG="$KUBECONFIG_FILE"
-                        kubectl apply -f k8s/ -n "$K8S_NAMESPACE"
+                        $KUBECTL_BIN apply -f k8s/ -n "$K8S_NAMESPACE"
                     '''
                 }
             }
