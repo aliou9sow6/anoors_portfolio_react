@@ -19,3 +19,6 @@
 .env
 .vscode
 .idea
+# Ignore all terraform files
+terraform/
+*.tfstate
