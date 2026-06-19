@@ -4,8 +4,12 @@
 # Exécuté automatiquement au premier démarrage de l'instance
 #
 # Convention d'échappement (templatefile Terraform) :
-#   ${variable}   → variable injectée par Terraform
-#   $${variable}  → variable bash réelle ($ échappé pour Terraform)
+#   - Les variables destinées à être remplacées par Terraform sont écrites directement
+#     dans le template (ex. backend_image_tag) et sont passées via la fonction
+#     `templatefile(...)` depuis `main.tf`.
+#   - Pour produire une variable bash littérale dans le fichier rendu,
+#     écris son nom ici précédé d'un double-dollar (deux signes dollar). Cela évite
+#     que Terraform n'essaie d'évaluer la séquence lors du rendu.
 ###############################################################
 
 set -euo pipefail
@@ -76,7 +80,10 @@ mkdir -p "$APP_DIR"
 cd "$APP_DIR"
 
 # ─── 5. Génération du docker-compose.yml ───────────────────
-# Note : heredoc SANS quotes → Terraform injecte ${...}, bash voit $${...}
+# Note : heredoc SANS quotes → Les variables passées depuis Terraform seront injectées
+#        ici par la fonction `templatefile`. Si tu souhaites qu'une séquence ressemble
+#        à une variable bash dans le fichier rendu, écris son nom précédé de deux
+#        signes dollar dans ce template (deux dollars avant le nom).
 echo "[5/6] Génération du docker-compose.yml..."
 
 cat > "$APP_DIR/docker-compose.yml" <<COMPOSE_EOF
@@ -119,7 +126,7 @@ services:
     networks:
       - portfolio_network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${backend_port}/projets"]
+      test: ["CMD", "curl", "-f", "http://localhost:${backend_port}/api/test"]
       interval: 30s
       timeout: 10s
       retries: 3

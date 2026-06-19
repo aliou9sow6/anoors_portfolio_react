@@ -27,5 +27,7 @@ terraform/**/.terraform.lock.hcl
 terraform/**/tfplan
 terraform/**/*.pem
 terraform/**/terraform_outputs.json
-terraform/scenario2-eks
+ 
 
+# Terraform scenario 1 free tier
+terraform/scenario1-free-tier/terraform.tfvars

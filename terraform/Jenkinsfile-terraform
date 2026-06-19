@@ -10,7 +10,7 @@ pipeline {
     parameters {
         choice(
             name: 'TERRAFORM_SCENARIO',
-            choices: ['scenario1-free-tier', 'scenario2-eks'],
+            choices: ['scenario1-free-tier'],
             description: 'Scénario Terraform à exécuter'
         )
         choice(
@@ -23,11 +23,7 @@ pipeline {
             defaultValue: false,
             description: 'Passer les étapes build/push Docker (si déjà buildé)'
         )
-        booleanParam(
-            name: 'DEPLOY_K8S_MANIFESTS',
-            defaultValue: false,
-            description: 'Déployer les manifests K8s après Terraform (scenario2 uniquement)'
-        )
+        // DEPLOY_K8S_MANIFESTS removed — EKS scenario ignored
         string(
             name: 'IMAGE_TAG',
             defaultValue: 'latest',
@@ -191,76 +187,7 @@ pipeline {
         }
 
         // ── 5. Déploiement K8s (Scénario 2 uniquement) ───────
-        stage('Configure kubectl (EKS)') {
-            when {
-                allOf {
-                    expression { params.TERRAFORM_SCENARIO == 'scenario2-eks' }
-                    expression { params.DEPLOY_K8S_MANIFESTS }
-                    expression { params.TERRAFORM_ACTION == 'apply' }
-                }
-            }
-            steps {
-                withCredentials([[
-                    $class: 'AmazonWebServicesCredentialsBinding',
-                    credentialsId: "${AWS_CREDENTIAL_ID}",
-                    accessKeyVariable: 'AWS_ACCESS_KEY_ID',
-                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
-                ]]) {
-                    sh '''
-                        # Récupérer le nom du cluster depuis les outputs Terraform
-                        CLUSTER_NAME=$(cat /tmp/terraform_outputs.json | python3 -c "import sys,json; print(json.load(sys.stdin)['eks_cluster_name']['value'])")
-                        REGION=$(cat /tmp/terraform_outputs.json | python3 -c "import sys,json; print('us-east-1')")
-
-                        # Configurer kubectl
-                        aws eks update-kubeconfig --region $REGION --name $CLUSTER_NAME
-
-                        # Vérifier la connexion
-                        kubectl cluster-info
-                        kubectl get nodes
-                    '''
-                }
-            }
-        }
-
-        stage('Deploy K8s Manifests') {
-            when {
-                allOf {
-                    expression { params.TERRAFORM_SCENARIO == 'scenario2-eks' }
-                    expression { params.DEPLOY_K8S_MANIFESTS }
-                    expression { params.TERRAFORM_ACTION == 'apply' }
-                }
-            }
-            steps {
-                withCredentials([[
-                    $class: 'AmazonWebServicesCredentialsBinding',
-                    credentialsId: "${AWS_CREDENTIAL_ID}",
-                    accessKeyVariable: 'AWS_ACCESS_KEY_ID',
-                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
-                ]]) {
-                    sh '''
-                        K8S_DIR="terraform/scenario2-eks/k8s-manifests"
-
-                        kubectl apply -f $K8S_DIR/mongodb.yaml
-                        kubectl apply -f $K8S_DIR/backend.yaml
-                        kubectl apply -f $K8S_DIR/frontend.yaml
-                        kubectl apply -f $K8S_DIR/ingress.yaml
-
-                        # Attendre le déploiement
-                        kubectl rollout status deployment/portfolio-backend  -n portfolio --timeout=180s
-                        kubectl rollout status deployment/portfolio-frontend -n portfolio --timeout=180s
-
-                        echo "=== Etat des pods ==="
-                        kubectl get pods -n portfolio
-
-                        echo "=== Services ==="
-                        kubectl get svc -n portfolio
-
-                        echo "=== Ingress ==="
-                        kubectl get ingress -n portfolio
-                    '''
-                }
-            }
-        }
+        // EKS deployment stages removed: scenario2-eks is ignored per request
     }
 
     post {
@@ -268,25 +195,25 @@ pipeline {
             mail to: 'kernelshell7@gmail.com',
                 subject: "✅ Pipeline Terraform réussi - ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                 body: """
-Pipeline Terraform exécuté avec succès !
+                    Pipeline Terraform exécuté avec succès !
 
-Scénario : ${params.TERRAFORM_SCENARIO}
-Action   : ${params.TERRAFORM_ACTION}
-Build    : #${env.BUILD_NUMBER}
-Commit   : ${env.GIT_COMMIT_SHORT}
-URL      : ${env.BUILD_URL}
-                """
-        }
-        failure {
-            mail to: 'kernelshell7@gmail.com',
-                subject: "❌ Pipeline Terraform échoué - ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                body: """
-Pipeline Terraform échoué !
+                    Scénario : ${params.TERRAFORM_SCENARIO}
+                    Action   : ${params.TERRAFORM_ACTION}
+                    Build    : #${env.BUILD_NUMBER}
+                    Commit   : ${env.GIT_COMMIT_SHORT}
+                    URL      : ${env.BUILD_URL}
+                                    """
+                            }
+                            failure {
+                                mail to: 'kernelshell7@gmail.com',
+                                    subject: "❌ Pipeline Terraform échoué - ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                                    body: """
+                    Pipeline Terraform échoué !
 
-Scénario : ${params.TERRAFORM_SCENARIO}
-Action   : ${params.TERRAFORM_ACTION}
-Build    : #${env.BUILD_NUMBER}
-Logs     : ${env.BUILD_URL}console
+                    Scénario : ${params.TERRAFORM_SCENARIO}
+                    Action   : ${params.TERRAFORM_ACTION}
+                    Build    : #${env.BUILD_NUMBER}
+                    Logs     : ${env.BUILD_URL}console
                 """
         }
         always {

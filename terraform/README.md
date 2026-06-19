@@ -126,7 +126,53 @@ terraform destroy -var-file="terraform.tfvars"
 
 ---
 
+## Checklist pour déployer le scénario AWS Free Tier
+
+1. Vérifier les credentials Jenkins
+   - `aws-credentials` : AWS Access Key + Secret Key
+   - `dockerhub-creds` : Docker Hub username/password
+   - (optionnel) `github-creds` pour l’accès SCM
+
+2. Préparer les images Docker
+   - Construire localement et tagger :
+     - `anoor9s6/portfolio-backend:<tag>`
+     - `anoor9s6/portfolio-frontend:<tag>`
+   - Pusher sur Docker Hub si tu veux réutiliser `SKIP_BUILD=true`
+
+3. Préparer le dossier Terraform
+   - Vérifier `terraform/scenario1-free-tier/terraform.tfvars`
+   - Ne pas committer ce fichier s’il contient des secrets
+   - Vérifier que `terraform/scenario1-free-tier/terraform.tfvars` contient les bonnes valeurs pour `region`, `key_name`, `public_key_path`, `allowed_ips`, etc.
+
+4. Lancer le pipeline Jenkins
+   - Source : `terraform/Jenkinsfile-terraform`
+   - Paramètres :
+     - `TERRAFORM_SCENARIO` = `scenario1-free-tier`
+     - `TERRAFORM_ACTION` = `plan`
+     - `SKIP_BUILD` = `false` (ou `true` si images déjà poussées)
+     - `IMAGE_TAG` = `latest` ou le tag souhaité
+   - Exécuter `plan` d’abord pour vérifier
+   - Vérifier l’output du plan avant `apply`
+
+5. Appliquer l’infrastructure
+   - Relancer le pipeline avec `TERRAFORM_ACTION = apply`
+   - Confirmer l’étape manuelle dans Jenkins
+   - Attendre la fin du déploiement
+
+6. Vérifier le résultat
+   - Se connecter en SSH : `terraform output ssh_command | bash`
+   - Vérifier que Docker Compose tourne sur l’EC2
+   - Vérifier le frontend sur l’IP Elastic et le backend sur le port 5000
+
+7. Nettoyer après utilisation
+   - Exécuter `terraform destroy -var-file="terraform.tfvars"`
+   - Fermer le pipeline si nécessaire
+
+---
+
 ## SCÉNARIO 2 — EKS (Architecture avancée)
+
+> **Note:** Le scénario `scenario2-eks` est ignoré pour l'instant. N'utilisez pas ce scénario pour un déploiement Free Tier.
 
 ### Architecture
 
@@ -224,7 +270,7 @@ Jenkins → Manage Jenkins → Credentials → (global) → Add Credentials :
 1. Créer un nouveau Pipeline Jenkins
 2. Source : SCM → GitHub → `terraform/Jenkinsfile-terraform`
 3. Lancer avec les paramètres :
-   - `TERRAFORM_SCENARIO` : `scenario1-free-tier` ou `scenario2-eks`
+    - `TERRAFORM_SCENARIO` : `scenario1-free-tier`
    - `TERRAFORM_ACTION` : `plan` → vérifier → `apply`
    - `IMAGE_TAG` : tag des images Docker
 
