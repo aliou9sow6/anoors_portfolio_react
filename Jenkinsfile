@@ -179,6 +179,11 @@ pipeline {
 
                             # Patcher 127.0.0.1 → host.docker.internal
                             sed -i "s|https://127.0.0.1|https://host.docker.internal|g" /tmp/kubeconfig &&
+
+                            # Le cert Docker Desktop est signé pour "localhost" pas "host.docker.internal"
+                            # → on injecte tls-server-name: localhost pour que le SNI TLS reste valide
+                            sed -i "s|server: https://host.docker.internal|server: https://host.docker.internal\n    tls-server-name: localhost|g" /tmp/kubeconfig &&
+
                             export KUBECONFIG=/tmp/kubeconfig &&
 
                             echo "=== Contexte actif ===" &&
