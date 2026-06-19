@@ -124,7 +124,8 @@ pipeline {
                         
                         # Added --insecure-skip-tls-verify because the certificate is valid for 'localhost' 
                         # but we are connecting via 'host.docker.internal' from the Jenkins container.
-                        kubectl apply --insecure-skip-tls-verify -f k8s/ -n "$K8S_NAMESPACE"
+                        # Added --validate=false to skip OpenAPI validation which requires a direct connection to the API server.
+                        kubectl apply --insecure-skip-tls-verify --validate=false -f k8s/ -n "$K8S_NAMESPACE"
                         
                         kubectl get all --insecure-skip-tls-verify -n "$K8S_NAMESPACE"
                     '''

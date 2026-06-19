@@ -19,15 +19,6 @@
 .env
 .vscode
 .idea
-
-# Terraform
-terraform/**/*.tfvars
-terraform/**/.terraform/
-terraform/**/.terraform.lock.hcl
-terraform/**/tfplan
-terraform/**/*.pem
-terraform/**/terraform_outputs.json
- 
-
-# Terraform scenario 1 free tier
-terraform/scenario1-free-tier/terraform.tfvars
+# Ignore all terraform files
+terraform/
+*.tfstate
