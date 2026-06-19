@@ -19,9 +19,9 @@ resource "aws_s3_bucket" "terraform_state" {
 
   # prevent_destroy : empêche terraform destroy de supprimer le bucket state
   # (erreur explicite si on essaie, oblige à commenter cette ligne manuellement)
-  lifecycle {
-    prevent_destroy = true
-  }
+  # lifecycle {
+  #  prevent_destroy = true
+  #}
 
   tags = {
     Name    = "${var.project_name}-tfstate"
