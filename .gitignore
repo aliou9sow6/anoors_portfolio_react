@@ -22,3 +22,4 @@
 # Ignore all terraform files
 terraform/
 *.tfstate
+kubeconfig
