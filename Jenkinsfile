@@ -111,15 +111,32 @@ pipeline {
         }
 
         stage('Validate Terraform Plan') {
-           
+            when {
+                expression { params.DEPLOY_TARGET == 'docker-compose' }
+            }
+
             steps {
                 withCredentials([
                     aws(credentialsId: 'aws-credentials', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')
                 ]) {
                     sh '''
                         cd terraform/scenario1-free-tier
-                        terraform init -backend=false
-                        terraform plan -var-file="terraform.tfvars" -out=tfplan.txt
+                        docker run --rm \
+                            -e AWS_ACCESS_KEY_ID \
+                            -e AWS_SECRET_ACCESS_KEY \
+                            -v "$PWD:/workspace" \
+                            -w /workspace \
+                            hashicorp/terraform:1.15.6 \
+                            terraform init -backend=false
+
+                        docker run --rm \
+                            -e AWS_ACCESS_KEY_ID \
+                            -e AWS_SECRET_ACCESS_KEY \
+                            -v "$PWD:/workspace" \
+                            -w /workspace \
+                            hashicorp/terraform:1.15.6 \
+                            terraform plan -var-file="terraform.tfvars" -out=tfplan.txt
+
                         echo "✓ Terraform plan validated successfully"
                     '''
                 }
