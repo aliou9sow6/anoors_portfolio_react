@@ -1,6 +1,19 @@
 pipeline {
     agent any
 
+    parameters {
+        choice(
+            name: 'DEPLOY_TARGET',
+            choices: ['kubernetes', 'docker-compose'],
+            description: 'Cible de déploiement : Kubernetes (kubectl) ou Docker Compose (local)'
+        )
+        string(
+            name: 'K8S_NAMESPACE',
+            defaultValue: 'portfolio',
+            description: 'Namespace Kubernetes cible'
+        )
+    }
+
     environment {
         DOCKERHUB_NAMESPACE = 'anoor9s6'
 
@@ -11,7 +24,8 @@ pipeline {
         FRONTEND_LATEST = "${DOCKERHUB_NAMESPACE}/portfolio-frontend:latest"
 
         DOCKERHUB_CREDENTIAL_ID = 'dockerhub-creds'
-        SONAR_SERVER = 'sonarqube-server'
+        SONAR_SERVER    = 'sonarqube-server'
+        KUBECONFIG_ID   = 'kubeconfig'   // ID du credential Jenkins de type "Secret file" contenant le kubeconfig
     }
 
         stages {
@@ -92,13 +106,39 @@ pipeline {
             }
         }
 
-        stage('Deploy Application') {
+        stage('Deploy to Kubernetes') {
+            when {
+                expression { params.DEPLOY_TARGET == 'kubernetes' }
+            }
+
             steps {
-                sh '''         
-                    # Supprimer les old containers applicatifs et dépendances orphelines
+                withCredentials([
+                    file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')
+                ]) {
+                    sh '''
+                        export KUBECONFIG="$KUBECONFIG_FILE"
+                        
+                        # Added --insecure-skip-tls-verify because the certificate is valid for 'localhost' 
+                        # but we are connecting via 'host.docker.internal' from the Jenkins container.
+                        # Added --validate=false to skip OpenAPI validation which requires a direct connection to the API server.
+                        kubectl apply --insecure-skip-tls-verify --validate=false -f k8s/ -n "$K8S_NAMESPACE"
+                        
+                        kubectl get all --insecure-skip-tls-verify -n "$K8S_NAMESPACE"
+                    '''
+                }
+            }
+        }
+
+        stage('Deploy with Docker Compose') {
+            when {
+                expression { params.DEPLOY_TARGET == 'docker-compose' }
+            }
+            steps {
+                sh '''
+                    # Supprimer les anciens containers applicatifs
                     docker rm -f portfolio_backend portfolio_frontend portfolio_mongodb || true
-                    
-                    # Redémarrer les SERVICES APPLICATIFS uniquement
+
+                    # Redémarrer les services applicatifs uniquement
                     docker-compose up -d --remove-orphans backend frontend
                 '''
             }
