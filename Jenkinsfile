@@ -110,6 +110,24 @@ pipeline {
             }
         }
 
+        stage('Validate Terraform Plan') {
+            when {
+                expression { params.DEPLOY_TARGET == 'docker-compose' }
+            }
+            steps {
+                withCredentials([
+                    aws(credentialsId: 'aws-credentials', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')
+                ]) {
+                    sh '''
+                        cd terraform/scenario1-free-tier
+                        terraform init -backend=false
+                        terraform plan -var-file="terraform.tfvars" -out=tfplan.txt
+                        echo "✓ Terraform plan validated successfully"
+                    '''
+                }
+            }
+        }
+
         stage('Deploy to Kubernetes') {
             when {
                 expression { params.DEPLOY_TARGET == 'kubernetes' }
