@@ -151,44 +151,65 @@ pipeline {
             steps {
                 withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')]) {
                     sh '''
-                        # alpine/k8s : image Alpine avec kubectl + sh + sed intégrés
-                        # --add-host : résout host.docker.internal vers l'IP de l'hôte Windows
-                        # Le kubeconfig pointe vers 127.0.0.1 (hôte Windows) → on patche vers host.docker.internal
+                        # PROBLÈME : Jenkins monte le Secret file comme un dossier dans docker -v
+                        # SOLUTION : lire le fichier depuis le shell Jenkins (hors container),
+                        #            l'encoder en base64, le passer comme variable d'env,
+                        #            et le reconstruire à l'intérieur du container.
+
+                        # Trouver le fichier kubeconfig dans le dossier Jenkins temporaire
+                        KUBE_FILE=$(find "$KUBECONFIG_FILE" -type f | head -1)
+                        if [ -z "$KUBE_FILE" ]; then
+                            # $KUBECONFIG_FILE est directement le fichier (pas un dossier)
+                            KUBE_FILE="$KUBECONFIG_FILE"
+                        fi
+
+                        echo "Kubeconfig trouvé : $KUBE_FILE"
+
+                        # Encoder le contenu en base64 (une seule ligne, sans saut de ligne)
+                        KUBECONFIG_B64=$(base64 -w 0 "$KUBE_FILE")
+
                         docker run --rm \
                           --add-host=host.docker.internal:host-gateway \
-                          -v "$KUBECONFIG_FILE":/tmp/kubeconfig-orig:ro \
+                          -e KUBECONFIG_B64="$KUBECONFIG_B64" \
                           -v "$(pwd)":/work \
                           -w /work \
-                          alpine/k8s:1.31.4 sh -c "
-                            cp /tmp/kubeconfig-orig /tmp/kubeconfig &&
-                            sed -i 's|https://127.0.0.1|https://host.docker.internal|g' /tmp/kubeconfig &&
+                          alpine/k8s:1.31.4 sh -c '
+                            # Reconstruire le kubeconfig depuis la variable base64
+                            echo "$KUBECONFIG_B64" | base64 -d > /tmp/kubeconfig &&
+
+                            # Patcher 127.0.0.1 → host.docker.internal
+                            sed -i "s|https://127.0.0.1|https://host.docker.internal|g" /tmp/kubeconfig &&
                             export KUBECONFIG=/tmp/kubeconfig &&
 
-                            echo '=== Cluster info ===' &&
+                            echo "=== Contexte actif ===" &&
+                            kubectl config current-context &&
+
+                            echo "=== Cluster info ===" &&
                             kubectl cluster-info &&
 
-                            echo '=== Namespace ===' &&
+                            echo "=== Namespace ===" &&
                             kubectl apply -f k8s/namespace.yaml &&
 
-                            echo '=== Manifests ===' &&
+                            echo "=== Manifests ===" &&
                             kubectl apply -f k8s/backend-deployment.yaml &&
                             kubectl apply -f k8s/backend-service.yaml &&
                             kubectl apply -f k8s/frontend-deployment.yaml &&
                             kubectl apply -f k8s/frontend-service.yaml &&
                             kubectl apply -f k8s/ingress.yaml &&
 
-                            echo '=== Rollout restart ===' &&
+                            echo "=== Rollout restart ===" &&
                             kubectl rollout restart deployment/portfolio-backend  -n portfolio &&
                             kubectl rollout restart deployment/portfolio-frontend -n portfolio &&
 
-                            echo '=== Attente stabilisation ===' &&
+                            echo "=== Attente stabilisation ===" &&
                             kubectl rollout status deployment/portfolio-backend  -n portfolio --timeout=120s &&
                             kubectl rollout status deployment/portfolio-frontend -n portfolio --timeout=120s &&
 
-                            echo '=== Etat final ===' &&
+                            echo "=== Etat final ===" &&
                             kubectl get pods -n portfolio &&
-                            kubectl get svc  -n portfolio
-                          "
+                            kubectl get svc  -n portfolio &&
+                            rm -f /tmp/kubeconfig
+                          '
                     '''
                 }
             }
