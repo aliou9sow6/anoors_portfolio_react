@@ -149,18 +149,46 @@ pipeline {
             }
 
             steps {
-                withCredentials([
-                    file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')
-                ]) {
+                withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')]) {
                     sh '''
-                        export KUBECONFIG="$KUBECONFIG_FILE"
-                        
-                        # Added --insecure-skip-tls-verify because the certificate is valid for 'localhost' 
-                        # but we are connecting via 'host.docker.internal' from the Jenkins container.
-                        # Added --validate=false to skip OpenAPI validation which requires a direct connection to the API server.
-                        kubectl apply --insecure-skip-tls-verify --validate=false -f k8s/ -n "$K8S_NAMESPACE"
-                        
-                        kubectl get all --insecure-skip-tls-verify -n "$K8S_NAMESPACE"
+                        # alpine/k8s : image Alpine avec kubectl + sh + sed intégrés
+                        # --add-host : résout host.docker.internal vers l'IP de l'hôte Windows
+                        # Le kubeconfig pointe vers 127.0.0.1 (hôte Windows) → on patche vers host.docker.internal
+                        docker run --rm \
+                          --add-host=host.docker.internal:host-gateway \
+                          -v "$KUBECONFIG_FILE":/tmp/kubeconfig-orig:ro \
+                          -v "$(pwd)":/work \
+                          -w /work \
+                          alpine/k8s:1.31.4 sh -c "
+                            cp /tmp/kubeconfig-orig /tmp/kubeconfig &&
+                            sed -i 's|https://127.0.0.1|https://host.docker.internal|g' /tmp/kubeconfig &&
+                            export KUBECONFIG=/tmp/kubeconfig &&
+
+                            echo '=== Cluster info ===' &&
+                            kubectl cluster-info &&
+
+                            echo '=== Namespace ===' &&
+                            kubectl apply -f k8s/namespace.yaml &&
+
+                            echo '=== Manifests ===' &&
+                            kubectl apply -f k8s/backend-deployment.yaml &&
+                            kubectl apply -f k8s/backend-service.yaml &&
+                            kubectl apply -f k8s/frontend-deployment.yaml &&
+                            kubectl apply -f k8s/frontend-service.yaml &&
+                            kubectl apply -f k8s/ingress.yaml &&
+
+                            echo '=== Rollout restart ===' &&
+                            kubectl rollout restart deployment/portfolio-backend  -n portfolio &&
+                            kubectl rollout restart deployment/portfolio-frontend -n portfolio &&
+
+                            echo '=== Attente stabilisation ===' &&
+                            kubectl rollout status deployment/portfolio-backend  -n portfolio --timeout=120s &&
+                            kubectl rollout status deployment/portfolio-frontend -n portfolio --timeout=120s &&
+
+                            echo '=== Etat final ===' &&
+                            kubectl get pods -n portfolio &&
+                            kubectl get svc  -n portfolio
+                          "
                     '''
                 }
             }
