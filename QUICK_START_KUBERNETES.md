@@ -36,25 +36,21 @@
 5. Vérifier: kubectl cluster-info
 ```
 
-#### **Option B: Minikube (Si Docker Desktop ne fonctionne pas)**
+#### **Option B: Minikube (non recommandé)**
 ```powershell
-# Dans PowerShell (Admin):
-choco install minikube
-minikube start
-minikube status
+# Docker Desktop Kubernetes est recommandé pour ce projet.
+# Si vous utilisez Docker Desktop, activez Kubernetes dans les paramètres.
 ```
 
 ---
 
 ## 📍 4 ÉTAPES POUR DÉPLOYER
 
-### Étape 1: Charger les Images (Minikube uniquement)
+### Étape 1: Charger les Images
 ```powershell
-# Si vous utilisez Minikube:
-minikube image load portfolio-backend:v1
-minikube image load portfolio-frontend:v1
-
-# Docker Desktop: SKIP cette étape (automatique)
+# Si vous utilisez Docker Desktop Kubernetes,
+# les images construites localement sont automatiquement disponibles.
+# Aucune commande minikube n'est nécessaire.
 ```
 
 ### Étape 2: Déployer avec le Script
@@ -132,7 +128,7 @@ kubectl get events -n portfolio
 ```
 ┌─────────────────────────────────────────────────────┐
 │           KUBERNETES CLUSTER                        │
-│        (Docker Desktop ou Minikube)                 │
+│        (Docker Desktop Kubernetes)                 │
 ├─────────────────────────────────────────────────────┤
 │                                                     │
 │  NAMESPACE: portfolio                               │

@@ -18,7 +18,7 @@ try {
     Write-Host "✓ kubectl disponible" -ForegroundColor Green
 } catch {
     Write-Host "✗ ERREUR: kubectl n'est pas installé ou non configuré" -ForegroundColor Red
-    Write-Host "   Installez Docker Desktop avec Kubernetes activé, ou Minikube" -ForegroundColor Yellow
+    Write-Host "   Installez Docker Desktop avec Kubernetes activé" -ForegroundColor Yellow
     exit 1
 }
 
@@ -33,8 +33,6 @@ try {
     Write-Host "✗ ERREUR: Impossible de se connecter au cluster Kubernetes" -ForegroundColor Red
     Write-Host "   Assurez-vous que:" -ForegroundColor Yellow
     Write-Host "   1. Docker Desktop Kubernetes est activé (Settings → Kubernetes → Enable)" -ForegroundColor Yellow
-    Write-Host "   OU" -ForegroundColor Yellow
-    Write-Host "   2. Minikube est démarré (minikube start)" -ForegroundColor Yellow
     exit 1
 }
 

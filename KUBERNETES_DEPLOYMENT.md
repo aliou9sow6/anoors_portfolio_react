@@ -64,12 +64,9 @@ docker-compose up -d
 kubectl cluster-info
 kubectl get nodes
 
-# OPTION B: Minikube (si Docker Desktop ne fonctionne pas)
-# Dans PowerShell (Admin):
-choco install minikube
-minikube start --driver docker
-minikube status
-eval $(minikube docker-env)
+# OPTION B: Minikube (non recommandé)
+# Docker Desktop Kubernetes est recommandé pour ce projet.
+# Si Kubernetes est activé dans Docker Desktop, vous n'avez pas besoin de lancer Minikube.
 ```
 
 ### Étapes de Déploiement
@@ -90,20 +87,10 @@ kubectl config current-context
 
 #### **Étape 2: Charger les Images dans Kubernetes**
 
-**Si vous utilisez Minikube:**
+**Docker Desktop Kubernetes:**
 ```powershell
-# Charger les images depuis Docker local dans Minikube
-minikube image load portfolio-backend:v1
-minikube image load portfolio-frontend:v1
-
-# Vérifier
-minikube image ls | Select-String portfolio
-```
-
-**Si vous utilisez Docker Desktop Kubernetes:**
-```powershell
-# Les images sont automatiquement disponibles!
-# Pas besoin de les charger
+# Les images construites localement sont automatiquement disponibles pour le cluster Docker Desktop.
+# Aucune commande minikube n'est nécessaire.
 ```
 
 #### **Étape 3: Créer le Namespace**
@@ -191,9 +178,6 @@ kubectl get svc -n portfolio
 
 # Si service type est NodePort et port est 30xxx:
 # Accédez à http://localhost:30xxx
-
-# Pour Minikube:
-minikube service portfolio-frontend -n portfolio
 ```
 
 #### **Étape 8: Voir les Logs**
@@ -413,8 +397,8 @@ docker images | Select-String portfolio
 # 2. Si imagePullPolicy: Always, changer à Never
 kubectl set env deployment/portfolio-backend imagePullPolicy=Never -n portfolio
 
-# 3. Ou charger l'image (Minikube)
-minikube image load portfolio-backend:v1
+# 3. Docker Desktop Kubernetes utilise les images locales automatiquement.
+# Aucune commande minikube n'est nécessaire.
 ```
 
 ### Problème: Pods Pending
