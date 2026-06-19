@@ -15,12 +15,7 @@ pipeline {
     }
 
     triggers {
-        // GitHub Push webhook - déclenche le build automatiquement sur push
         githubPush()
-
-        // Fallback: Poll SCM every 5 minutes si webhook GitHub ne fonctionne pas
-        // Décommente cette ligne si tu veux un polling régulier en plus du webhook
-        // pollSCM('H/5 * * * *')
     }
 
     environment {
