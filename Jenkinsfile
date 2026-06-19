@@ -14,6 +14,10 @@ pipeline {
         )
     }
 
+    triggers {
+        githubPush()
+    }
+
     environment {
         DOCKERHUB_NAMESPACE = 'anoor9s6'
 
@@ -171,7 +175,7 @@ pipeline {
               Durée     : ${currentBuild.durationString}
               URL       : ${env.BUILD_URL}
 
-              Consultez les logs : ${env.BUILD_URL}console
+              Consultez les logs : ${env.BUILD_URL}console 
                           """
       }
 
