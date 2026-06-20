@@ -5,7 +5,7 @@ pipeline {
         choice(
             name: 'DEPLOY_TARGET',
             choices: ['kubernetes', 'docker-compose'],
-            description: 'Cible de déploiement : Kubernetes (kubectl) ou Docker Compose (local)'
+            description: 'Cible de déploiement : kubernetes (Terraform + K8s) | docker-compose (local)'
         )
         string(
             name: 'K8S_NAMESPACE',
@@ -19,26 +19,26 @@ pipeline {
     }
 
     environment {
-        DOCKERHUB_NAMESPACE = 'anoor9s6'
-
-        BACKEND_IMAGE = "${DOCKERHUB_NAMESPACE}/portfolio-backend:v1.0.${BUILD_NUMBER}"
-        FRONTEND_IMAGE = "${DOCKERHUB_NAMESPACE}/portfolio-frontend:v1.0.${BUILD_NUMBER}"
-
-        BACKEND_LATEST = "${DOCKERHUB_NAMESPACE}/portfolio-backend:latest"
-        FRONTEND_LATEST = "${DOCKERHUB_NAMESPACE}/portfolio-frontend:latest"
-
+        DOCKERHUB_NAMESPACE     = 'anoor9s6'
+        BACKEND_IMAGE           = "${DOCKERHUB_NAMESPACE}/portfolio-backend:v1.0.${BUILD_NUMBER}"
+        FRONTEND_IMAGE          = "${DOCKERHUB_NAMESPACE}/portfolio-frontend:v1.0.${BUILD_NUMBER}"
+        BACKEND_LATEST          = "${DOCKERHUB_NAMESPACE}/portfolio-backend:latest"
+        FRONTEND_LATEST         = "${DOCKERHUB_NAMESPACE}/portfolio-frontend:latest"
         DOCKERHUB_CREDENTIAL_ID = 'dockerhub-creds'
-        SONAR_SERVER = 'sonarqube-server'
-        KUBECONFIG_ID = 'kubeconfig'
+        TF_IMAGE                = 'hashicorp/terraform:1.6.6'   // image réelle sur Docker Hub
+        TF_DIR                  = 'terraform/scenario1-free-tier'
     }
 
     stages {
+
+        // ── 1. Checkout ──────────────────────────────────────────
         stage('Checkout Source Code') {
             steps {
                 checkout scm
             }
         }
 
+        // ── 2. SonarQube ─────────────────────────────────────────
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('sonarqube-server') {
@@ -57,6 +57,7 @@ pipeline {
             }
         }
 
+        // ── 3. Build & Push Docker ───────────────────────────────
         stage('Build Docker Images') {
             parallel {
                 stage('Build Backend Image') {
@@ -67,7 +68,6 @@ pipeline {
                         '''
                     }
                 }
-
                 stage('Build Frontend Image') {
                     steps {
                         sh '''
@@ -81,16 +81,12 @@ pipeline {
 
         stage('Login to Docker Hub') {
             steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: "${DOCKERHUB_CREDENTIAL_ID}",
-                        usernameVariable: 'DOCKERHUB_USER',
-                        passwordVariable: 'DOCKERHUB_PASS'
-                    )
-                ]) {
-                    sh '''
-                        echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USER" --password-stdin
-                    '''
+                withCredentials([usernamePassword(
+                    credentialsId: "${DOCKERHUB_CREDENTIAL_ID}",
+                    usernameVariable: 'DOCKERHUB_USER',
+                    passwordVariable: 'DOCKERHUB_PASS'
+                )]) {
+                    sh 'echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USER" --password-stdin'
                 }
             }
         }
@@ -100,34 +96,29 @@ pipeline {
                 sh '''
                     docker push $BACKEND_IMAGE
                     docker push $FRONTEND_IMAGE
-
                     docker push $BACKEND_LATEST
                     docker push $FRONTEND_LATEST
                 '''
             }
         }
 
+        // ── 4. Terraform (uniquement pour le scénario kubernetes) ─
         stage('Terraform Init') {
-            when {
-                expression { params.DEPLOY_TARGET == 'kubernetes' }
-            }
+            when { expression { params.DEPLOY_TARGET == 'kubernetes' } }
             steps {
-                withCredentials([
-                    aws(credentialsId: 'aws-credentials', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')
-                ]) {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws-credentials',
+                    accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                ]]) {
                     sh '''
-                        set -euo pipefail
-
-                        echo '--- [Terraform Init] Debug ---'
-                        echo "WORKSPACE=${WORKSPACE:-<unset>}"
-                        ls -la "${WORKSPACE}" || true
-
                         docker run --rm \
-                          -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
-                          -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+                          -e AWS_ACCESS_KEY_ID \
+                          -e AWS_SECRET_ACCESS_KEY \
                           -v "$WORKSPACE:/workspace" \
-                          -w /workspace/terraform/scenario1-free-tier \
-                          hashicorp/terraform:1.15.6 \
+                          -w /workspace/$TF_DIR \
+                          $TF_IMAGE \
                           init -backend=false
                     '''
                 }
@@ -135,22 +126,21 @@ pipeline {
         }
 
         stage('Terraform Validate') {
-            when {
-                expression { params.DEPLOY_TARGET == 'kubernetes' }
-            }
+            when { expression { params.DEPLOY_TARGET == 'kubernetes' } }
             steps {
-                withCredentials([
-                    aws(credentialsId: 'aws-credentials', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')
-                ]) {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws-credentials',
+                    accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                ]]) {
                     sh '''
-                        set -euo pipefail
-
                         docker run --rm \
-                          -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
-                          -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+                          -e AWS_ACCESS_KEY_ID \
+                          -e AWS_SECRET_ACCESS_KEY \
                           -v "$WORKSPACE:/workspace" \
-                          -w /workspace/terraform/scenario1-free-tier \
-                          hashicorp/terraform:1.15.6 \
+                          -w /workspace/$TF_DIR \
+                          $TF_IMAGE \
                           validate
                     '''
                 }
@@ -158,83 +148,139 @@ pipeline {
         }
 
         stage('Terraform Plan') {
-            when {
-                expression { params.DEPLOY_TARGET == 'kubernetes' }
-            }
+            when { expression { params.DEPLOY_TARGET == 'kubernetes' } }
             steps {
-                withCredentials([
-                    aws(credentialsId: 'aws-credentials', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')
-                ]) {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws-credentials',
+                    accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                ],
+                [
+                    $class: 'StringBinding',
+                    credentialsId: 'mongo-password',
+                    variable: 'MONGO_PASSWORD'
+                ]]) {
                     sh '''
-                        set -euo pipefail
+                        # Générer le terraform.tfvars depuis le template + les credentials Jenkins
+                        # (le fichier .tfvars n'est pas dans le repo car il contient des secrets)
+                        cp $WORKSPACE/$TF_DIR/terraform.tfvars.example \
+                           $WORKSPACE/$TF_DIR/terraform.tfvars
+
+                        # Remplacer le mot de passe MongoDB par la valeur du credential Jenkins
+                        sed -i "s|mongo_root_password = .*|mongo_root_password = \\"$MONGO_PASSWORD\\"|" \
+                          $WORKSPACE/$TF_DIR/terraform.tfvars
+
+                        # Mettre à jour les tags d'images avec le numéro de build
+                        sed -i "s|backend_image_tag  = .*|backend_image_tag  = \\"v1.0.$BUILD_NUMBER\\"|" \
+                          $WORKSPACE/$TF_DIR/terraform.tfvars
+                        sed -i "s|frontend_image_tag = .*|frontend_image_tag = \\"v1.0.$BUILD_NUMBER\\"|" \
+                          $WORKSPACE/$TF_DIR/terraform.tfvars
+
+                        echo "=== terraform.tfvars généré ==="
+                        grep -v password $WORKSPACE/$TF_DIR/terraform.tfvars
 
                         docker run --rm \
-                          -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
-                          -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+                          -e AWS_ACCESS_KEY_ID \
+                          -e AWS_SECRET_ACCESS_KEY \
                           -v "$WORKSPACE:/workspace" \
-                          -w /workspace/terraform/scenario1-free-tier \
-                          hashicorp/terraform:1.15.6 \
-                          plan -var-file=terraform.tfvars -out=tfplan.txt
+                          -w /workspace/$TF_DIR \
+                          $TF_IMAGE \
+                          plan -var-file=terraform.tfvars -out=tfplan.bin
                     '''
                 }
             }
         }
 
         stage('Terraform Apply') {
-            when {
-                expression { params.DEPLOY_TARGET == 'kubernetes' }
-            }
+            when { expression { params.DEPLOY_TARGET == 'kubernetes' } }
             steps {
-                input message: 'Approve Terraform apply?', ok: 'Apply'
-                withCredentials([
-                    aws(credentialsId: 'aws-credentials', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')
-                ]) {
+                input message: '⚠️ Approuver le déploiement AWS (terraform apply) ?', ok: 'Appliquer'
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws-credentials',
+                    accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                ]]) {
                     sh '''
-                        set -euo pipefail
+                        docker run --rm \
+                          -e AWS_ACCESS_KEY_ID \
+                          -e AWS_SECRET_ACCESS_KEY \
+                          -v "$WORKSPACE:/workspace" \
+                          -w /workspace/$TF_DIR \
+                          $TF_IMAGE \
+                          apply -input=false tfplan.bin
+                    '''
+                }
+            }
+        }
+
+        // ── 5. Déploiement Kubernetes ────────────────────────────
+        stage('Deploy to Kubernetes') {
+            when { expression { params.DEPLOY_TARGET == 'kubernetes' } }
+            steps {
+                withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')]) {
+                    sh '''
+                        # Jenkins monte le Secret file dans un dossier temporaire
+                        # → trouver le vrai fichier, l'encoder en base64, le passer au container
+                        KUBE_FILE=$(find "$KUBECONFIG_FILE" -type f 2>/dev/null | head -1)
+                        [ -z "$KUBE_FILE" ] && KUBE_FILE="$KUBECONFIG_FILE"
+                        echo "Kubeconfig : $KUBE_FILE"
+
+                        KUBECONFIG_B64=$(base64 -w 0 "$KUBE_FILE")
 
                         docker run --rm \
-                          -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
-                          -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
-                          -v "$WORKSPACE:/workspace" \
-                          -w /workspace/terraform/scenario1-free-tier \
-                          hashicorp/terraform:1.15.6 \
-                          apply -input=false tfplan.txt
+                          --add-host=host.docker.internal:host-gateway \
+                          -e KUBECONFIG_B64="$KUBECONFIG_B64" \
+                          -v "$(pwd)":/work \
+                          -w /work \
+                          alpine/k8s:1.31.4 sh -c '
+                            echo "$KUBECONFIG_B64" | base64 -d > /tmp/kubeconfig
+
+                            # Remplacer 127.0.0.1 par host.docker.internal
+                            sed -i "s|https://127.0.0.1|https://host.docker.internal|g" /tmp/kubeconfig
+
+                            # Ajouter tls-server-name: localhost
+                            # (le cert Docker Desktop est signé pour localhost, pas host.docker.internal)
+                            sed -i "s|server: https://host.docker.internal|server: https://host.docker.internal\n    tls-server-name: localhost|g" /tmp/kubeconfig
+
+                            export KUBECONFIG=/tmp/kubeconfig
+
+                            echo "=== Contexte ===" && kubectl config current-context
+                            echo "=== Cluster info ===" && kubectl cluster-info
+
+                            echo "=== Namespace ===" && kubectl apply -f k8s/namespace.yaml
+
+                            echo "=== Manifests ===" &&
+                            kubectl apply -f k8s/backend-deployment.yaml &&
+                            kubectl apply -f k8s/backend-service.yaml &&
+                            kubectl apply -f k8s/frontend-deployment.yaml &&
+                            kubectl apply -f k8s/frontend-service.yaml &&
+                            kubectl apply -f k8s/ingress.yaml
+
+                            echo "=== Rollout ===" &&
+                            kubectl rollout restart deployment/portfolio-backend  -n portfolio &&
+                            kubectl rollout restart deployment/portfolio-frontend -n portfolio &&
+                            kubectl rollout status  deployment/portfolio-backend  -n portfolio --timeout=120s &&
+                            kubectl rollout status  deployment/portfolio-frontend -n portfolio --timeout=120s
+
+                            echo "=== Etat final ===" &&
+                            kubectl get pods -n portfolio &&
+                            kubectl get svc  -n portfolio
+
+                            rm -f /tmp/kubeconfig
+                          '
                     '''
                 }
             }
         }
 
-        stage('Deploy to Kubernetes') {
-            when {
-                expression { params.DEPLOY_TARGET == 'kubernetes' }
-            }
-            steps {
-                withCredentials([
-                    file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')
-                ]) {
-                    sh '''
-                        set -euo pipefail
-                        export KUBECONFIG="$KUBECONFIG_FILE"
-
-                        kubectl apply --insecure-skip-tls-verify --validate=false -f k8s/namespace.yaml
-                        kubectl apply --insecure-skip-tls-verify --validate=false -f k8s/ -n "$K8S_NAMESPACE"
-
-                        kubectl get all --insecure-skip-tls-verify -n "$K8S_NAMESPACE"
-                    '''
-                }
-            }
-        }
-
+        // ── 6. Docker Compose (déploiement local) ────────────────
         stage('Deploy with Docker Compose') {
-            when {
-                expression { params.DEPLOY_TARGET == 'docker-compose' }
-            }
+            when { expression { params.DEPLOY_TARGET == 'docker-compose' } }
             steps {
                 sh '''
-                    # Supprimer les anciens containers applicatifs
                     docker rm -f portfolio_backend portfolio_frontend portfolio_mongodb || true
-
-                    # Redémarrer les services applicatifs uniquement
                     docker-compose up -d --remove-orphans backend frontend
                 '''
             }
@@ -244,35 +290,30 @@ pipeline {
     post {
         success {
             mail to: 'kernelshell7@gmail.com',
-                subject: "✅ Pipeline reussi - ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                subject: "✅ Pipeline réussi — ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                 body: """
-                Le pipeline s'est execute avec succes !
+Pipeline exécuté avec succès !
 
-                Job       : ${env.JOB_NAME}
-                Build     : #${env.BUILD_NUMBER}
-                Durée     : ${currentBuild.durationString}
-                URL       : ${env.BUILD_URL}
+Job    : ${env.JOB_NAME}
+Build  : #${env.BUILD_NUMBER}
+Durée  : ${currentBuild.durationString}
+URL    : ${env.BUILD_URL}
                 """
         }
-
         failure {
             mail to: 'kernelshell7@gmail.com',
-                subject: "❌ Pipeline echoue - ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                subject: "❌ Pipeline échoué — ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                 body: """
-                Le pipeline a echoue !
+Pipeline échoué !
 
-                Job       : ${env.JOB_NAME}
-                Build     : #${env.BUILD_NUMBER}
-                Durée     : ${currentBuild.durationString}
-                URL       : ${env.BUILD_URL}
-
-                Consultez les logs : ${env.BUILD_URL}console
+Job    : ${env.JOB_NAME}
+Build  : #${env.BUILD_NUMBER}
+Durée  : ${currentBuild.durationString}
+Logs   : ${env.BUILD_URL}console
                 """
         }
-
         always {
             cleanWs()
         }
     }
 }
-
