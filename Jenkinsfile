@@ -181,9 +181,16 @@ pipeline {
                         echo "=== Fichiers présents ==="
                         ls -la $WORKSPACE/$TF_DIR/
 
-                        # hashicorp/terraform est distroless → --entrypoint /bin/sh
-                        # Le script est passé via une variable pour éviter les problèmes
-                        # d'interprétation du && par le shell Jenkins
+                        # Écrire le script dans un fichier pour éviter tout problème
+                        # d'interprétation du && par Jenkins/Groovy/shell
+                        cat > $WORKSPACE/tf_plan.sh << 'TFSCRIPT'
+#!/bin/sh
+set -e
+terraform init -backend=false
+terraform plan -var-file=terraform.tfvars -out=tfplan.bin
+TFSCRIPT
+                        chmod +x $WORKSPACE/tf_plan.sh
+
                         docker run --rm \
                           --entrypoint /bin/sh \
                           -e AWS_ACCESS_KEY_ID \
@@ -191,10 +198,7 @@ pipeline {
                           -v "$WORKSPACE:/workspace" \
                           -w /workspace/$TF_DIR \
                           $TF_IMAGE \
-                          -c 'terraform init -backend=false \
-                           && terraform plan \
-                                -var-file=terraform.tfvars \
-                                -out=tfplan.bin'
+                          /workspace/tf_plan.sh
                     '''
                 }
             }
@@ -211,6 +215,14 @@ pipeline {
                     secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
                 ]]) {
                     sh '''
+                        cat > $WORKSPACE/tf_apply.sh << 'TFSCRIPT'
+#!/bin/sh
+set -e
+terraform init -backend=false
+terraform apply -input=false tfplan.bin
+TFSCRIPT
+                        chmod +x $WORKSPACE/tf_apply.sh
+
                         docker run --rm \
                           --entrypoint /bin/sh \
                           -e AWS_ACCESS_KEY_ID \
@@ -218,8 +230,7 @@ pipeline {
                           -v "$WORKSPACE:/workspace" \
                           -w /workspace/$TF_DIR \
                           $TF_IMAGE \
-                          -c 'terraform init -backend=false \
-                           && terraform apply -input=false tfplan.bin'
+                          /workspace/tf_apply.sh
                     '''
                 }
             }
