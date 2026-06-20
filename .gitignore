@@ -23,9 +23,13 @@
 terraform/**/.terraform/
 terraform/**/.terraform.lock.hcl
 terraform/**/tfplan
+terraform/**/tfplan.bin
 terraform/**/tfplan.txt
 terraform/**/*.pem
 terraform/**/terraform_outputs.json
+terraform/**/terraform.tfstate
+terraform/**/terraform.tfstate.backup
+terraform/**/*.tfstate*
 # terraform.tfvars contient des secrets → ne pas committer en production
 # Pour le pipeline Jenkins, utiliser terraform.tfvars.example + variables Jenkins
 terraform/**/terraform.tfvars
