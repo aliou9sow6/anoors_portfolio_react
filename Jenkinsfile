@@ -119,9 +119,7 @@ pipeline {
                     aws(credentialsId: 'aws-credentials', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')
                 ]) {
                     sh '''
-                        HOST_VOLUME=$(docker volume inspect anoors_portfolio_react_jenkins_home --format '{{.Mountpoint}}')
-                        REL_PATH=${WORKSPACE#/var/jenkins_home}
-                        HOST_WORKSPACE="$HOST_VOLUME$REL_PATH"
+                        HOST_WORKSPACE=$(docker volume inspect jenkins_home --format '{{.Mountpoint}}')/workspace/full_stack_portfolio/terraform/scenario1-free-tier
                         echo "HOST_WORKSPACE=$HOST_WORKSPACE"
                         ls -la "$HOST_WORKSPACE"
                         docker run --rm \
@@ -145,9 +143,7 @@ pipeline {
                     aws(credentialsId: 'aws-credentials', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')
                 ]) {
                     sh '''
-                        HOST_VOLUME=$(docker volume inspect anoors_portfolio_react_jenkins_home --format '{{.Mountpoint}}')
-                        REL_PATH=${WORKSPACE#/var/jenkins_home}
-                        HOST_WORKSPACE="$HOST_VOLUME$REL_PATH"
+                        HOST_WORKSPACE=$(docker volume inspect jenkins_home --format '{{.Mountpoint}}')/workspace/full_stack_portfolio/terraform/scenario1-free-tier
                         echo "HOST_WORKSPACE=$HOST_WORKSPACE"
                         ls -la "$HOST_WORKSPACE"
                         docker run --rm \
@@ -171,9 +167,7 @@ pipeline {
                     aws(credentialsId: 'aws-credentials', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')
                 ]) {
                     sh '''
-                        HOST_VOLUME=$(docker volume inspect anoors_portfolio_react_jenkins_home --format '{{.Mountpoint}}')
-                        REL_PATH=${WORKSPACE#/var/jenkins_home}
-                        HOST_WORKSPACE="$HOST_VOLUME$REL_PATH"
+                        HOST_WORKSPACE=$(docker volume inspect jenkins_home --format '{{.Mountpoint}}')/workspace/full_stack_portfolio/terraform/scenario1-free-tier
                         echo "HOST_WORKSPACE=$HOST_WORKSPACE"
                         ls -la "$HOST_WORKSPACE"
                         echo '---'
@@ -201,9 +195,7 @@ pipeline {
                     aws(credentialsId: 'aws-credentials', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')
                 ]) {
                     sh '''
-                        HOST_VOLUME=$(docker volume inspect anoors_portfolio_react_jenkins_home --format '{{.Mountpoint}}')
-                        REL_PATH=${WORKSPACE#/var/jenkins_home}
-                        HOST_WORKSPACE="$HOST_VOLUME$REL_PATH"
+                        HOST_WORKSPACE=$(docker volume inspect jenkins_home --format '{{.Mountpoint}}')/workspace/full_stack_portfolio/terraform/scenario1-free-tier
                         echo "HOST_WORKSPACE=$HOST_WORKSPACE"
                         ls -la "$HOST_WORKSPACE"
                         docker run --rm \
