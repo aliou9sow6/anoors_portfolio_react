@@ -12,6 +12,11 @@ pipeline {
             defaultValue: 'portfolio',
             description: 'Namespace Kubernetes cible'
         )
+        password(
+            name: 'MONGO_PASSWORD',
+            defaultValue: '',
+            description: 'Mot de passe MongoDB (obligatoire pour le déploiement Terraform)'
+        )
     }
 
     triggers {
@@ -150,23 +155,6 @@ pipeline {
         stage('Terraform Plan') {
             when { expression { params.DEPLOY_TARGET == 'kubernetes' } }
             steps {
-                // Récupérer le mongo-password séparément pour éviter le mélange de styles
-                withCredentials([string(credentialsId: 'mongo-password', variable: 'MONGO_PASSWORD')]) {
-                    // Générer le tfvars avec le secret injecté
-                    sh '''
-                        cp $WORKSPACE/$TF_DIR/terraform.tfvars.example \
-                           $WORKSPACE/$TF_DIR/terraform.tfvars
-                        sed -i "s|mongo_root_password = .*|mongo_root_password = \\"$MONGO_PASSWORD\\"|" \
-                          $WORKSPACE/$TF_DIR/terraform.tfvars
-                        sed -i "s|backend_image_tag  = .*|backend_image_tag  = \\"v1.0.$BUILD_NUMBER\\"|" \
-                          $WORKSPACE/$TF_DIR/terraform.tfvars
-                        sed -i "s|frontend_image_tag = .*|frontend_image_tag = \\"v1.0.$BUILD_NUMBER\\"|" \
-                          $WORKSPACE/$TF_DIR/terraform.tfvars
-                        echo "=== terraform.tfvars prêt ==="
-                        grep -v "password" $WORKSPACE/$TF_DIR/terraform.tfvars || true
-                    '''
-                }
-                // Lancer terraform plan avec les credentials AWS (style $class séparé)
                 withCredentials([[
                     $class: 'AmazonWebServicesCredentialsBinding',
                     credentialsId: 'aws-credentials',
@@ -174,6 +162,23 @@ pipeline {
                     secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
                 ]]) {
                     sh '''
+                        # Générer terraform.tfvars depuis le template
+                        cp $WORKSPACE/$TF_DIR/terraform.tfvars.example \
+                           $WORKSPACE/$TF_DIR/terraform.tfvars
+
+                        # Injecter le mot de passe depuis le paramètre pipeline (masqué dans les logs)
+                        sed -i "s|mongo_root_password = .*|mongo_root_password = \\"''' + params.MONGO_PASSWORD + '''\\"|" \
+                          $WORKSPACE/$TF_DIR/terraform.tfvars
+
+                        # Mettre à jour les tags d'images
+                        sed -i "s|backend_image_tag  = .*|backend_image_tag  = \\"v1.0.$BUILD_NUMBER\\"|" \
+                          $WORKSPACE/$TF_DIR/terraform.tfvars
+                        sed -i "s|frontend_image_tag = .*|frontend_image_tag = \\"v1.0.$BUILD_NUMBER\\"|" \
+                          $WORKSPACE/$TF_DIR/terraform.tfvars
+
+                        echo "=== terraform.tfvars prêt ==="
+                        grep -v "password" $WORKSPACE/$TF_DIR/terraform.tfvars
+
                         docker run --rm \
                           -e AWS_ACCESS_KEY_ID \
                           -e AWS_SECRET_ACCESS_KEY \
