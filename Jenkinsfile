@@ -166,7 +166,7 @@ pipeline {
                         cp $WORKSPACE/$TF_DIR/terraform.tfvars.example \
                            $WORKSPACE/$TF_DIR/terraform.tfvars
 
-                        # Injecter le mot de passe depuis le paramètre pipeline (masqué dans les logs)
+                        # Injecter le mot de passe depuis le paramètre pipeline
                         sed -i "s|mongo_root_password = .*|mongo_root_password = \\"''' + params.MONGO_PASSWORD + '''\\"|" \
                           $WORKSPACE/$TF_DIR/terraform.tfvars
 
@@ -178,14 +178,17 @@ pipeline {
 
                         echo "=== terraform.tfvars prêt ==="
                         grep -v "password" $WORKSPACE/$TF_DIR/terraform.tfvars
+                        echo "=== Vérification fichier dans le volume ==="
+                        ls -la $WORKSPACE/$TF_DIR/
 
+                        # Init + Plan dans un seul container pour partager le répertoire .terraform
                         docker run --rm \
                           -e AWS_ACCESS_KEY_ID \
                           -e AWS_SECRET_ACCESS_KEY \
                           -v "$WORKSPACE:/workspace" \
                           -w /workspace/$TF_DIR \
                           $TF_IMAGE \
-                          plan -var-file=terraform.tfvars -out=tfplan.bin
+                          sh -c "terraform init -backend=false && terraform plan -var-file=/workspace/$TF_DIR/terraform.tfvars -out=/workspace/$TF_DIR/tfplan.bin"
                     '''
                 }
             }
@@ -208,7 +211,7 @@ pipeline {
                           -v "$WORKSPACE:/workspace" \
                           -w /workspace/$TF_DIR \
                           $TF_IMAGE \
-                          apply -input=false tfplan.bin
+                          sh -c "terraform init -backend=false && terraform apply -input=false /workspace/$TF_DIR/tfplan.bin"
                     '''
                 }
             }
