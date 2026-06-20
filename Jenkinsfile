@@ -28,39 +28,37 @@ pipeline {
         FRONTEND_LATEST = "${DOCKERHUB_NAMESPACE}/portfolio-frontend:latest"
 
         DOCKERHUB_CREDENTIAL_ID = 'dockerhub-creds'
-        SONAR_SERVER    = 'sonarqube-server'
-        KUBECONFIG_ID   = 'kubeconfig'   // ID du credential Jenkins de type "Secret file" contenant le kubeconfig
+        SONAR_SERVER = 'sonarqube-server'
+        KUBECONFIG_ID = 'kubeconfig'
     }
 
-        stages {
-
-            stage('Checkout Source Code') {
-                steps {
-                    checkout scm
-                }
+    stages {
+        stage('Checkout Source Code') {
+            steps {
+                checkout scm
             }
+        }
 
-            stage('SonarQube Analysis') {
-                steps {
-                    withSonarQubeEnv('sonarqube-server') {
-                        withEnv(["SONAR_HOST_URL=http://sonarqube:9000"]) {
-                            sh '/var/jenkins_home/tools/hudson.plugins.sonar.SonarRunnerInstallation/sonar-scanner/bin/sonar-scanner -Dsonar.host.url=http://sonarqube:9000'
-                        }
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('sonarqube-server') {
+                    withEnv(["SONAR_HOST_URL=http://sonarqube:9000"]) {
+                        sh '/var/jenkins_home/tools/hudson.plugins.sonar.SonarRunnerInstallation/sonar-scanner/bin/sonar-scanner -Dsonar.host.url=http://sonarqube:9000'
                     }
                 }
             }
+        }
 
-            stage('Quality Gate') {
-                steps {
-                    timeout(time: 5, unit: 'MINUTES') {
-                        waitForQualityGate abortPipeline: true
-                    }
+        stage('Quality Gate') {
+            steps {
+                timeout(time: 5, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
                 }
             }
+        }
 
-            stage('Build Docker Images') {
+        stage('Build Docker Images') {
             parallel {
-
                 stage('Build Backend Image') {
                     steps {
                         sh '''
@@ -90,7 +88,6 @@ pipeline {
                         passwordVariable: 'DOCKERHUB_PASS'
                     )
                 ]) {
-
                     sh '''
                         echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USER" --password-stdin
                     '''
@@ -110,7 +107,7 @@ pipeline {
             }
         }
 
-            stage('Terraform Init') {
+        stage('Terraform Init') {
             when {
                 expression { params.DEPLOY_TARGET == 'kubernetes' }
             }
@@ -119,51 +116,23 @@ pipeline {
                     aws(credentialsId: 'aws-credentials', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')
                 ]) {
                     sh '''
-                                                set -euo pipefail
+                        set -euo pipefail
 
-                                                echo '--- [Terraform Init] Debug ---'
-                                                echo "WORKSPACE=${WORKSPACE:-<unset>}"
-
-                                                VOL=$(docker volume ls --format '{{.Name}}' | grep -E '_jenkins_home$' | head -n1 || true)
-                                                if [ -z "$VOL" ]; then echo "ERROR: no jenkins volume found"; exit 1; fi
-                                                HOST_VOLUME=$(docker volume inspect "$VOL" --format '{{.Mountpoint}}')
-
-                                                echo "JENKINS_HOME_VOLUME_NAME=$VOL"
-                                                echo "HOST_VOLUME=$HOST_VOLUME"
-
-                                                # Keep previous derivation (useful for debugging), but do not rely on it for locating workspace
-                                                REL_PATH=${WORKSPACE#/var/jenkins_home}
-                                                JOB_DIR_NAME=$(basename "$REL_PATH")
-                                                echo "REL_PATH=$REL_PATH"
-                                                echo "JOB_DIR_NAME=$JOB_DIR_NAME"
-
-                                                # Robust lookup: find any matching scenario directory under $HOST_VOLUME/workspace
-                                                TARGET_DIR="terraform/scenario1-free-tier"
-                                                CANDIDATE=$(find "$HOST_VOLUME/workspace" -maxdepth 4 -type d -path "*/$TARGET_DIR" 2>/dev/null | sort -r | head -n1 || true)
-
-                                                if [ -z "${CANDIDATE:-}" ] ; then
-                                                    echo "ERROR: could not locate '$TARGET_DIR' under $HOST_VOLUME/workspace"
-                                                    echo '--- ls $HOST_VOLUME/workspace (top 200) ---'
-                                                    ls -la "$HOST_VOLUME/workspace" 2>/dev/null | head -n 200 || true
-                                                    exit 1
-                                                fi
-
-                                                HOST_WORKSPACE="$CANDIDATE"
-                                                echo "HOST_WORKSPACE=$HOST_WORKSPACE"
-                                                ls -la "$(dirname "$HOST_WORKSPACE")" || true
+                        echo '--- [Terraform Init] Debug ---'
+                        echo "WORKSPACE=${WORKSPACE:-<unset>}"
+                        ls -la "${WORKSPACE}" || true
 
                         docker run --rm \
                           -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
                           -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
-                          -v "$HOST_WORKSPACE:/workspace" \
-                          -w /workspace \
+                          -v "$WORKSPACE:/workspace" \
+                          -w /workspace/terraform/scenario1-free-tier \
                           hashicorp/terraform:1.15.6 \
                           init -backend=false
                     '''
                 }
             }
         }
-
 
         stage('Terraform Validate') {
             when {
@@ -174,34 +143,19 @@ pipeline {
                     aws(credentialsId: 'aws-credentials', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')
                 ]) {
                     sh '''
-                                                set -euo pipefail
-
-                                                VOL=$(docker volume ls --format '{{.Name}}' | grep -E '_jenkins_home$' | head -n1 || true)
-                                                if [ -z "$VOL" ]; then echo "ERROR: no jenkins volume found"; exit 1; fi
-                                                HOST_VOLUME=$(docker volume inspect "$VOL" --format '{{.Mountpoint}}')
-
-                                                TARGET_DIR="terraform/scenario1-free-tier"
-                                                CANDIDATE=$(find "$HOST_VOLUME/workspace" -maxdepth 4 -type d -path "*/$TARGET_DIR" 2>/dev/null | sort -r | head -n1 || true)
-
-                                                if [ -z "${CANDIDATE:-}" ] ; then
-                                                    echo "ERROR: could not locate '$TARGET_DIR' under $HOST_VOLUME/workspace"
-                                                    exit 1
-                                                fi
-
-                                                HOST_WORKSPACE="$CANDIDATE"
+                        set -euo pipefail
 
                         docker run --rm \
                           -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
                           -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
-                          -v "$HOST_WORKSPACE:/workspace" \
-                          -w /workspace \
+                          -v "$WORKSPACE:/workspace" \
+                          -w /workspace/terraform/scenario1-free-tier \
                           hashicorp/terraform:1.15.6 \
                           validate
                     '''
                 }
             }
         }
-
 
         stage('Terraform Plan') {
             when {
@@ -212,38 +166,19 @@ pipeline {
                     aws(credentialsId: 'aws-credentials', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')
                 ]) {
                     sh '''
-                                                set -euo pipefail
-
-                                                VOL=$(docker volume ls --format '{{.Name}}' | grep -E '_jenkins_home$' | head -n1 || true)
-                                                if [ -z "$VOL" ]; then echo "ERROR: no jenkins volume found"; exit 1; fi
-                                                HOST_VOLUME=$(docker volume inspect "$VOL" --format '{{.Mountpoint}}')
-
-                                                TARGET_DIR="terraform/scenario1-free-tier"
-                                                CANDIDATE=$(find "$HOST_VOLUME/workspace" -maxdepth 4 -type d -path "*/$TARGET_DIR" 2>/dev/null | sort -r | head -n1 || true)
-
-                                                if [ -z "${CANDIDATE:-}" ] ; then
-                                                    echo "ERROR: could not locate '$TARGET_DIR' under $HOST_VOLUME/workspace"
-                                                    exit 1
-                                                fi
-
-                                                HOST_WORKSPACE="$CANDIDATE"
-
-                                                echo '--- [Terraform Plan] Debug ---'
-                                                echo "HOST_WORKSPACE=$HOST_WORKSPACE"
-                                                if [ -f "$HOST_WORKSPACE/terraform.tfvars" ]; then echo 'TFVARS=present'; else echo 'TFVARS=missing'; fi
+                        set -euo pipefail
 
                         docker run --rm \
                           -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
                           -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
-                          -v "$HOST_WORKSPACE:/workspace" \
-                          -w /workspace \
+                          -v "$WORKSPACE:/workspace" \
+                          -w /workspace/terraform/scenario1-free-tier \
                           hashicorp/terraform:1.15.6 \
                           plan -var-file=terraform.tfvars -out=tfplan.txt
                     '''
                 }
             }
         }
-
 
         stage('Terraform Apply') {
             when {
@@ -255,27 +190,13 @@ pipeline {
                     aws(credentialsId: 'aws-credentials', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')
                 ]) {
                     sh '''
-                                                set -euo pipefail
-
-                                                VOL=$(docker volume ls --format '{{.Name}}' | grep -E '_jenkins_home$' | head -n1 || true)
-                                                if [ -z "$VOL" ]; then echo "ERROR: no jenkins volume found"; exit 1; fi
-                                                HOST_VOLUME=$(docker volume inspect "$VOL" --format '{{.Mountpoint}}')
-
-                                                TARGET_DIR="terraform/scenario1-free-tier"
-                                                CANDIDATE=$(find "$HOST_VOLUME/workspace" -maxdepth 4 -type d -path "*/$TARGET_DIR" 2>/dev/null | sort -r | head -n1 || true)
-
-                                                if [ -z "${CANDIDATE:-}" ] ; then
-                                                    echo "ERROR: could not locate '$TARGET_DIR' under $HOST_VOLUME/workspace"
-                                                    exit 1
-                                                fi
-
-                                                HOST_WORKSPACE="$CANDIDATE"
+                        set -euo pipefail
 
                         docker run --rm \
                           -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
                           -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
-                          -v "$HOST_WORKSPACE:/workspace" \
-                          -w /workspace \
+                          -v "$WORKSPACE:/workspace" \
+                          -w /workspace/terraform/scenario1-free-tier \
                           hashicorp/terraform:1.15.6 \
                           apply -input=false tfplan.txt
                     '''
@@ -283,22 +204,21 @@ pipeline {
             }
         }
 
-
         stage('Deploy to Kubernetes') {
             when {
                 expression { params.DEPLOY_TARGET == 'kubernetes' }
             }
-
             steps {
                 withCredentials([
                     file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')
                 ]) {
                     sh '''
+                        set -euo pipefail
                         export KUBECONFIG="$KUBECONFIG_FILE"
-                        
+
                         kubectl apply --insecure-skip-tls-verify --validate=false -f k8s/namespace.yaml
                         kubectl apply --insecure-skip-tls-verify --validate=false -f k8s/ -n "$K8S_NAMESPACE"
-                        
+
                         kubectl get all --insecure-skip-tls-verify -n "$K8S_NAMESPACE"
                     '''
                 }
@@ -319,40 +239,40 @@ pipeline {
                 '''
             }
         }
-
     }
 
     post {
-      success {
-          mail to: 'kernelshell7@gmail.com',
-              subject: "✅ Pipeline reussi - ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-              body: """
-              Le pipeline s'est execute avec succes !
+        success {
+            mail to: 'kernelshell7@gmail.com',
+                subject: "✅ Pipeline reussi - ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: """
+                Le pipeline s'est execute avec succes !
 
-              Job       : ${env.JOB_NAME}
-              Build     : #${env.BUILD_NUMBER}
-              Durée     : ${currentBuild.durationString}
-              URL       : ${env.BUILD_URL}
-                          """
-                  }
+                Job       : ${env.JOB_NAME}
+                Build     : #${env.BUILD_NUMBER}
+                Durée     : ${currentBuild.durationString}
+                URL       : ${env.BUILD_URL}
+                """
+        }
 
-                  failure {
-                      mail to: 'kernelshell7@gmail.com',
-                          subject: "❌ Pipeline echoue - ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                          body: """
-              Le pipeline a echoue !
+        failure {
+            mail to: 'kernelshell7@gmail.com',
+                subject: "❌ Pipeline echoue - ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: """
+                Le pipeline a echoue !
 
-              Job       : ${env.JOB_NAME}
-              Build     : #${env.BUILD_NUMBER}
-              Durée     : ${currentBuild.durationString}
-              URL       : ${env.BUILD_URL}
+                Job       : ${env.JOB_NAME}
+                Build     : #${env.BUILD_NUMBER}
+                Durée     : ${currentBuild.durationString}
+                URL       : ${env.BUILD_URL}
 
-              Consultez les logs : ${env.BUILD_URL}console 
-                          """
-      }
+                Consultez les logs : ${env.BUILD_URL}console
+                """
+        }
 
-      always {
-          cleanWs() // Nettoie l'espace de travail après chaque build
-      }
+        always {
+            cleanWs()
+        }
     }
 }
+
