@@ -126,7 +126,7 @@ pipeline {
                             -v "$PWD:/workspace" \
                             -w /workspace \
                             hashicorp/terraform:1.15.6 \
-                            terraform init -backend=false
+                            init -backend=false
                     '''
                 }
             }
@@ -148,7 +148,7 @@ pipeline {
                             -v "$PWD:/workspace" \
                             -w /workspace \
                             hashicorp/terraform:1.15.6 \
-                            terraform validate
+                            validate
                     '''
                 }
             }
@@ -170,7 +170,7 @@ pipeline {
                             -v "$PWD:/workspace" \
                             -w /workspace \
                             hashicorp/terraform:1.15.6 \
-                            terraform plan -var-file="terraform.tfvars" -out=tfplan.txt
+                            plan -var-file="terraform.tfvars" -out=tfplan.txt
                     '''
                 }
             }
@@ -193,7 +193,7 @@ pipeline {
                             -v "$PWD:/workspace" \
                             -w /workspace \
                             hashicorp/terraform:1.15.6 \
-                            terraform apply -input=false tfplan.txt
+                            apply -input=false tfplan.txt
                     '''
                 }
             }
