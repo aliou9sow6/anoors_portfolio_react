@@ -118,16 +118,13 @@ pipeline {
                 withCredentials([
                     aws(credentialsId: 'aws-credentials', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')
                 ]) {
-                    sh '''
-                        cd terraform/scenario1-free-tier
-                        docker run --rm \
-                            -e AWS_ACCESS_KEY_ID \
-                            -e AWS_SECRET_ACCESS_KEY \
-                            -v "$PWD:/workspace" \
-                            -w /workspace \
-                            hashicorp/terraform:1.15.6 \
-                            init -backend=false
-                    '''
+                    script {
+                        docker.image('hashicorp/terraform:1.15.6').inside {
+                            dir('terraform/scenario1-free-tier') {
+                                sh 'terraform init -backend=false'
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -140,16 +137,13 @@ pipeline {
                 withCredentials([
                     aws(credentialsId: 'aws-credentials', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')
                 ]) {
-                    sh '''
-                        cd terraform/scenario1-free-tier
-                        docker run --rm \
-                            -e AWS_ACCESS_KEY_ID \
-                            -e AWS_SECRET_ACCESS_KEY \
-                            -v "$PWD:/workspace" \
-                            -w /workspace \
-                            hashicorp/terraform:1.15.6 \
-                            validate
-                    '''
+                    script {
+                        docker.image('hashicorp/terraform:1.15.6').inside {
+                            dir('terraform/scenario1-free-tier') {
+                                sh 'terraform validate'
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -162,16 +156,13 @@ pipeline {
                 withCredentials([
                     aws(credentialsId: 'aws-credentials', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')
                 ]) {
-                    sh '''
-                        cd terraform/scenario1-free-tier
-                        docker run --rm \
-                            -e AWS_ACCESS_KEY_ID \
-                            -e AWS_SECRET_ACCESS_KEY \
-                            -v "$PWD:/workspace" \
-                            -w /workspace \
-                            hashicorp/terraform:1.15.6 \
-                            plan -var-file=/workspace/terraform.tfvars -out=/workspace/tfplan.txt
-                    '''
+                    script {
+                        docker.image('hashicorp/terraform:1.15.6').inside {
+                            dir('terraform/scenario1-free-tier') {
+                                sh 'terraform plan -var-file=terraform.tfvars -out=tfplan.txt'
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -185,16 +176,13 @@ pipeline {
                 withCredentials([
                     aws(credentialsId: 'aws-credentials', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')
                 ]) {
-                    sh '''
-                        cd terraform/scenario1-free-tier
-                        docker run --rm \
-                            -e AWS_ACCESS_KEY_ID \
-                            -e AWS_SECRET_ACCESS_KEY \
-                            -v "$PWD:/workspace" \
-                            -w /workspace \
-                            hashicorp/terraform:1.15.6 \
-                            apply -input=false /workspace/tfplan.txt
-                    '''
+                    script {
+                        docker.image('hashicorp/terraform:1.15.6').inside {
+                            dir('terraform/scenario1-free-tier') {
+                                sh 'terraform apply -input=false tfplan.txt'
+                            }
+                        }
+                    }
                 }
             }
         }
