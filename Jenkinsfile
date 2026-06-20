@@ -150,31 +150,30 @@ pipeline {
         stage('Terraform Plan') {
             when { expression { params.DEPLOY_TARGET == 'kubernetes' } }
             steps {
-                withCredentials([
-                    [
-                        $class: 'AmazonWebServicesCredentialsBinding',
-                        credentialsId: 'aws-credentials',
-                        accessKeyVariable: 'AWS_ACCESS_KEY_ID',
-                        secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
-                    ],
-                    string(credentialsId: 'mongo-password', variable: 'MONGO_PASSWORD')
-                ]) {
+                // Récupérer le mongo-password séparément pour éviter le mélange de styles
+                withCredentials([string(credentialsId: 'mongo-password', variable: 'MONGO_PASSWORD')]) {
+                    // Générer le tfvars avec le secret injecté
                     sh '''
-                        # Copier le template et injecter les valeurs sensibles
                         cp $WORKSPACE/$TF_DIR/terraform.tfvars.example \
                            $WORKSPACE/$TF_DIR/terraform.tfvars
-
                         sed -i "s|mongo_root_password = .*|mongo_root_password = \\"$MONGO_PASSWORD\\"|" \
                           $WORKSPACE/$TF_DIR/terraform.tfvars
-
                         sed -i "s|backend_image_tag  = .*|backend_image_tag  = \\"v1.0.$BUILD_NUMBER\\"|" \
                           $WORKSPACE/$TF_DIR/terraform.tfvars
                         sed -i "s|frontend_image_tag = .*|frontend_image_tag = \\"v1.0.$BUILD_NUMBER\\"|" \
                           $WORKSPACE/$TF_DIR/terraform.tfvars
-
-                        echo "=== terraform.tfvars généré (secrets masqués) ==="
-                        grep -v "password\\|key" $WORKSPACE/$TF_DIR/terraform.tfvars || true
-
+                        echo "=== terraform.tfvars prêt ==="
+                        grep -v "password" $WORKSPACE/$TF_DIR/terraform.tfvars || true
+                    '''
+                }
+                // Lancer terraform plan avec les credentials AWS (style $class séparé)
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws-credentials',
+                    accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                ]]) {
+                    sh '''
                         docker run --rm \
                           -e AWS_ACCESS_KEY_ID \
                           -e AWS_SECRET_ACCESS_KEY \
