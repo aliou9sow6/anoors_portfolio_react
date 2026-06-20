@@ -269,8 +269,8 @@ pipeline {
                 Consultez les logs : ${env.BUILD_URL}console
                 """
         }
-                '''
-            }
+
+        always {
         }
 
     }
