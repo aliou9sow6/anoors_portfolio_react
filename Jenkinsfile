@@ -170,7 +170,7 @@ pipeline {
                             -v "$PWD:/workspace" \
                             -w /workspace \
                             hashicorp/terraform:1.15.6 \
-                            plan -var-file="terraform.tfvars" -out=tfplan.txt
+                            plan -var-file=/workspace/terraform.tfvars -out=/workspace/tfplan.txt
                     '''
                 }
             }
@@ -193,7 +193,7 @@ pipeline {
                             -v "$PWD:/workspace" \
                             -w /workspace \
                             hashicorp/terraform:1.15.6 \
-                            apply -input=false tfplan.txt
+                            apply -input=false /workspace/tfplan.txt
                     '''
                 }
             }
