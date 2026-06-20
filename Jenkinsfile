@@ -178,17 +178,23 @@ pipeline {
 
                         echo "=== terraform.tfvars prêt ==="
                         grep -v "password" $WORKSPACE/$TF_DIR/terraform.tfvars
-                        echo "=== Vérification fichier dans le volume ==="
+                        echo "=== Fichiers présents ==="
                         ls -la $WORKSPACE/$TF_DIR/
 
-                        # Init + Plan dans un seul container pour partager le répertoire .terraform
+                        # hashicorp/terraform est distroless (pas de shell)
+                        # --entrypoint /bin/sh permet d'exécuter plusieurs commandes en séquence
+                        # init ET plan dans le même container pour partager le .terraform/
                         docker run --rm \
+                          --entrypoint /bin/sh \
                           -e AWS_ACCESS_KEY_ID \
                           -e AWS_SECRET_ACCESS_KEY \
                           -v "$WORKSPACE:/workspace" \
                           -w /workspace/$TF_DIR \
                           $TF_IMAGE \
-                          sh -c "terraform init -backend=false && terraform plan -var-file=/workspace/$TF_DIR/terraform.tfvars -out=/workspace/$TF_DIR/tfplan.bin"
+                          -c "terraform init -backend=false && \
+                              terraform plan \
+                                -var-file=/workspace/$TF_DIR/terraform.tfvars \
+                                -out=/workspace/$TF_DIR/tfplan.bin"
                     '''
                 }
             }
@@ -206,12 +212,14 @@ pipeline {
                 ]]) {
                     sh '''
                         docker run --rm \
+                          --entrypoint /bin/sh \
                           -e AWS_ACCESS_KEY_ID \
                           -e AWS_SECRET_ACCESS_KEY \
                           -v "$WORKSPACE:/workspace" \
                           -w /workspace/$TF_DIR \
                           $TF_IMAGE \
-                          sh -c "terraform init -backend=false && terraform apply -input=false /workspace/$TF_DIR/tfplan.bin"
+                          -c "terraform init -backend=false && \
+                              terraform apply -input=false /workspace/$TF_DIR/tfplan.bin"
                     '''
                 }
             }
