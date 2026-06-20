@@ -181,9 +181,9 @@ pipeline {
                         echo "=== Fichiers présents ==="
                         ls -la $WORKSPACE/$TF_DIR/
 
-                        # hashicorp/terraform est distroless (pas de shell)
-                        # --entrypoint /bin/sh permet d'exécuter plusieurs commandes en séquence
-                        # init ET plan dans le même container pour partager le .terraform/
+                        # hashicorp/terraform est distroless → --entrypoint /bin/sh
+                        # Le script est passé via une variable pour éviter les problèmes
+                        # d'interprétation du && par le shell Jenkins
                         docker run --rm \
                           --entrypoint /bin/sh \
                           -e AWS_ACCESS_KEY_ID \
@@ -191,10 +191,10 @@ pipeline {
                           -v "$WORKSPACE:/workspace" \
                           -w /workspace/$TF_DIR \
                           $TF_IMAGE \
-                          -c "terraform init -backend=false && \
-                              terraform plan \
-                                -var-file=/workspace/$TF_DIR/terraform.tfvars \
-                                -out=/workspace/$TF_DIR/tfplan.bin"
+                          -c 'terraform init -backend=false \
+                           && terraform plan \
+                                -var-file=terraform.tfvars \
+                                -out=tfplan.bin'
                     '''
                 }
             }
@@ -218,8 +218,8 @@ pipeline {
                           -v "$WORKSPACE:/workspace" \
                           -w /workspace/$TF_DIR \
                           $TF_IMAGE \
-                          -c "terraform init -backend=false && \
-                              terraform apply -input=false /workspace/$TF_DIR/tfplan.bin"
+                          -c 'terraform init -backend=false \
+                           && terraform apply -input=false tfplan.bin'
                     '''
                 }
             }
