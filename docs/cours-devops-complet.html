@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cours DevOps Full Stack — Anoors Portfolio</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 13px; line-height: 1.7; color: #1a1a2e; background: #fff; }
+  .cover { page-break-after: always; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); color: white; text-align: center; padding: 60px 40px; }
+  .cover h1 { font-size: 36px; font-weight: 700; margin-bottom: 16px; letter-spacing: -0.5px; }
+  .cover .subtitle { font-size: 18px; color: #a8d8ea; margin-bottom: 40px; }
+  .cover .badges { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 50px; }
+  .cover .badge { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); padding: 6px 14px; border-radius: 20px; font-size: 12px; color: #e2e8f0; }
+  .cover .meta { font-size: 13px; color: #94a3b8; border-top: 1px solid rgba(255,255,255,0.15); padding-top: 30px; margin-top: 30px; }
+  .toc { page-break-after: always; padding: 60px 80px; }
+  .toc h2 { font-size: 24px; color: #0f3460; margin-bottom: 30px; padding-bottom: 12px; border-bottom: 3px solid #e94560; }
+  .toc ol { list-style: none; counter-reset:terraform destroy toc-counter; }
+  .toc > ol > li { counter-increment: toc-counter; font-size: 15px; font-weight: 600; color: #1a1a2e; padding: 10px 0; border-bottom: 1px dotted #e2e8f0; display: flex; justify-content: space-between; }
+  .toc > ol > li::before { content: counter(toc-counter) "."; color: #e94560; margin-right: 12px; min-width: 24px; }
+  .toc ul { padding-left: 36px; }
+  .toc ul li { font-size: 13px; font-weight: 400; color: #64748b; padding: 4px 0; border-bottom: none; list-style: disc; display: list-item; }
+  .chapter { padding: 50px 80px; page-break-before: always; }
+  .chapter-header { background: linear-gradient(135deg, #0f3460, #16213e); color: white; margin: -50px -80px 40px -80px; padding: 40px 80px; }
+  .chapter-header .chapter-num { font-size: 13px; color: #94a3b8; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; }
+  .chapter-header h2 { font-size: 28px; font-weight: 700; }
+  h3 { font-size: 18px; color: #0f3460; margin: 30px 0 12px 0; padding-left: 12px; border-left: 4px solid #e94560; }
+  h4 { font-size: 14px; color: #1a1a2e; margin: 20px 0 8px 0; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  p { margin-bottom: 12px; color: #374151; }
+  code { font-family: 'Consolas', 'Courier New', monospace; font-size: 12px; background: #f1f5f9; color: #e94560; padding: 2px 6px; border-radius: 4px; }
+  pre { background: #1e293b; color: #e2e8f0; padding: 20px 24px; border-radius: 8px; margin: 16px 0; overflow-x: auto; font-family: 'Consolas', monospace; font-size: 12px; line-height: 1.6; border-left: 4px solid #e94560; }
+  pre code { background: none; color: inherit; padding: 0; }
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 12px; }
+  th { background: #0f3460; color: white; padding: 10px 14px; text-align: left; font-weight: 600; }
+  td { padding: 9px 14px; border-bottom: 1px solid #e2e8f0; color: #374151; }
+  tr:nth-child(even) td { background: #f8fafc; }
+  .info-box { background: #eff6ff; border-left: 4px solid #3b82f6; padding: 14px 18px; margin: 16px 0; border-radius: 0 8px 8px 0; }
+  .warning-box { background: #fffbeb; border-left: 4px solid #f59e0b; padding: 14px 18px; margin: 16px 0; border-radius: 0 8px 8px 0; }
+  .success-box { background: #f0fdf4; border-left: 4px solid #22c55e; padding: 14px 18px; margin: 16px 0; border-radius: 0 8px 8px 0; }
+  .error-box { background: #fef2f2; border-left: 4px solid #ef4444; padding: 14px 18px; margin: 16px 0; border-radius: 0 8px 8px 0; }
+  .box-title { font-weight: 700; font-size: 13px; margin-bottom: 6px; }
+  .info-box .box-title { color: #1d4ed8; }
+  .warning-box .box-title { color: #d97706; }
+  .success-box .box-title { color: #15803d; }
+  .error-box .box-title { color: #dc2626; }
+  ul, ol { padding-left: 24px; margin-bottom: 12px; }
+  li { margin-bottom: 4px; color: #374151; }
+  .schema { background: #0f172a; color: #94a3b8; font-family: 'Consolas', monospace; font-size: 12px; padding: 20px 24px; border-radius: 8px; margin: 16px 0; line-height: 1.8; }
+  .lesson-table { margin: 20px 0; }
+  .lesson-table th { background: #e94560; }
+  .page-break { page-break-after: always; }
+  @media print {
+    body { font-size: 12px; }
+    .cover { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .chapter-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    pre { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .info-box, .warning-box, .success-box, .error-box { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    h3 { page-break-after: avoid; }
+    pre, table { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<!-- PAGE DE COUVERTURE -->
+<div class="cover">
+  <div style="font-size:48px;margin-bottom:20px;">⚙️</div>
+  <h1>Cours DevOps Full Stack</h1>
+  <div class="subtitle">De l'application React au déploiement cloud AWS<br>avec Docker, Jenkins, Kubernetes et Terraform</div>
+  <div class="badges">
+    <span class="badge">🐳 Docker</span>
+    <span class="badge">🔧 Jenkins CI/CD</span>
+    <span class="badge">📊 SonarQube</span>
+    <span class="badge">☸️ Kubernetes</span>
+    <span class="badge">🏗️ Terraform</span>
+    <span class="badge">☁️ AWS Free Tier</span>
+    <span class="badge">⚛️ React 19</span>
+    <span class="badge">🟢 Node.js</span>
+    <span class="badge">🍃 MongoDB</span>
+  </div>
+  <div class="meta">
+    <strong>Projet</strong> : anoors_portfolio_react<br>
+    <strong>Auteur</strong> : Aliou Sow (aliou9sow6)<br>
+    <strong>Date</strong> : Juin 2026<br>
+    <strong>Niveau</strong> : Débutant → Intermédiaire DevOps
+  </div>
+</div>
+
+<!-- TABLE DES MATIÈRES -->
+<div class="toc">
+  <h2>Table des matières</h2>
+  <ol>
+    <li>L'application Full Stack
+      <ul><li>Architecture 3-tiers</li><li>Frontend React + Backend Express + MongoDB</li></ul>
+    </li>
+    <li>Docker — Conteneurisation
+      <ul><li>Images et containers</li><li>Multi-stage build</li><li>Docker Compose</li><li>Networking</li></ul>
+    </li>
+    <li>Jenkins — Pipeline CI/CD
+      <ul><li>Concepts CI/CD</li><li>Anatomie du Jenkinsfile</li><li>Credentials et sécurité</li><li>Erreurs rencontrées et leçons</li></ul>
+    </li>
+    <li>SonarQube — Qualité du code
+      <ul><li>Analyse statique</li><li>Quality Gate</li></ul>
+    </li>
+    <li>Kubernetes — Orchestration
+      <ul><li>Concepts fondamentaux</li><li>Architecture K8s du projet</li><li>Rolling Update</li><li>Problème Jenkins → K8s</li></ul>
+    </li>
+    <li>Terraform — Infrastructure as Code
+      <ul><li>Le problème résolu</li><li>Cycle Terraform</li><li>State et remote backend</li><li>Infrastructure AWS Free Tier</li></ul>
+    </li>
+    <li>La chaîne CI/CD complète</li>
+    <li>Sécurité — Bonnes pratiques</li>
+    <li>Erreurs clés et solutions</li>
+  </ol>
+</div>
+
+<!-- CHAPITRE 1 -->
+<div class="chapter">
+  <div class="chapter-header">
+    <div class="chapter-num">Chapitre 1</div>
+    <h2>L'application Full Stack</h2>
+  </div>
+
+  <h3>Architecture 3-tiers</h3>
+  <p>Ton portfolio est une application <strong>3-tiers</strong> : chaque couche a une responsabilité unique et communique avec la suivante via des protocoles standardisés.</p>
+  <div class="schema">
+[Navigateur]
+     │  HTTP :80
+     ▼
+[Nginx + React]  ──────  Sert les fichiers statiques (HTML/CSS/JS)
+     │  HTTP :5000 /api/*
+     ▼
+[Node.js / Express]  ───  API REST : logique métier, validation
+     │  TCP :27017
+     ▼
+[MongoDB]  ─────────────  Persistance des données (projets)
+  </div>
+
+  <h3>Frontend — React 19</h3>
+  <p>React est une bibliothèque JavaScript pour construire des interfaces utilisateur. L'application est une <strong>SPA (Single Page Application)</strong> : une seule page HTML, le routing est géré côté client par React Router.</p>
+  <table>
+    <tr><th>Composant</th><th>Rôle</th></tr>
+    <tr><td><code>Accueil.jsx</code></td><td>Page d'accueil et présentation</td></tr>
+    <tr><td><code>Dossier.jsx</code></td><td>Liste de tous les projets</td></tr>
+    <tr><td><code>Projet.jsx</code></td><td>Carte individuelle d'un projet</td></tr>
+    <tr><td><code>AjouterProjet.jsx</code></td><td>Formulaire de création</td></tr>
+    <tr><td><code>EditerProjet.jsx</code></td><td>Formulaire de modification</td></tr>
+    <tr><td><code>DetaillerProjet.jsx</code></td><td>Vue détaillée</td></tr>
+    <tr><td><code>DeleteProject.jsx</code></td><td>Confirmation de suppression</td></tr>
+    <tr><td><code>Contact.jsx</code></td><td>Formulaire de contact</td></tr>
+  </table>
+
+  <h3>Backend — Node.js / Express 5</h3>
+  <p>Le backend expose une API REST complète. Chaque opération CRUD correspond à une méthode HTTP :</p>
+  <table>
+    <tr><th>Méthode</th><th>URL</th><th>Action</th></tr>
+    <tr><td>GET</td><td>/projets</td><td>Lister tous les projets</td></tr>
+    <tr><td>GET</td><td>/projets/:id</td><td>Détail d'un projet</td></tr>
+    <tr><td>POST</td><td>/projets</td><td>Créer un projet</td></tr>
+    <tr><td>PUT</td><td>/projets/:id</td><td>Modifier un projet</td></tr>
+    <tr><td>DELETE</td><td>/projets/:id</td><td>Supprimer un projet</td></tr>
+  </table>
+
+  <h3>Base de données — MongoDB</h3>
+  <p>MongoDB est une base de données <strong>NoSQL orientée documents</strong>. Les données sont stockées en JSON (BSON en interne). Chaque projet est un document dans la collection <code>projets</code>.</p>
+  <pre><code>{
+  "id": "1",
+  "libelle": "Portfolio React",
+  "description": "Application de gestion de projets",
+  "technologies": ["React", "Node.js", "MongoDB"],
+  "lien": "https://github.com/aliou9sow6/...",
+  "image": "https://..."
+}</code></pre>
+  <div class="info-box">
+    <div class="box-title">ℹ️ Mongoose</div>
+    Le backend utilise <strong>Mongoose</strong>, un ODM (Object Document Mapper) qui définit des schémas pour structurer les documents MongoDB et valider les données avant insertion.
+  </div>
+</div>
+
+<!-- CHAPITRE 2 -->
+<div class="chapter">
+  <div class="chapter-header">
+    <div class="chapter-num">Chapitre 2</div>
+    <h2>Docker — Conteneurisation</h2>
+  </div>
+
+  <h3>Image vs Container</h3>
+  <p>La distinction fondamentale :</p>
+  <table>
+    <tr><th>Concept</th><th>Analogie</th><th>Commande</th></tr>
+    <tr><td><strong>Image</strong></td><td>Recette de cuisine (immutable)</td><td><code>docker build</code></td></tr>
+    <tr><td><strong>Container</strong></td><td>Plat préparé (instance qui tourne)</td><td><code>docker run</code></td></tr>
+    <tr><td><strong>Registry</strong></td><td>Bibliothèque de recettes</td><td>Docker Hub</td></tr>
+    <tr><td><strong>Volume</strong></td><td>Disque dur externe</td><td><code>-v data:/data</code></td></tr>
+  </table>
+
+  <h3>Multi-stage Build</h3>
+  <p>Le multi-stage build crée des images finales légères en séparant l'environnement de build de l'environnement d'exécution.</p>
+  <pre><code># Stage 1 : Builder — image lourde avec Node.js (500Mo+)
+FROM node:22-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build          # Compile le React → HTML/CSS/JS statique
+
+# Stage 2 : Runner — image légère Nginx (20Mo)
+FROM nginx:alpine
+COPY --from=builder /app/build /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Le résultat final ne contient PAS Node.js !</code></pre>
+  <div class="success-box">
+    <div class="box-title">✅ Bénéfice</div>
+    Image finale : ~20Mo au lieu de ~500Mo. Moins de surface d'attaque, déploiement plus rapide.
+  </div>
+
+  <h3>Docker Compose</h3>
+  <p>Docker Compose orchestre plusieurs containers interdépendants dans un seul fichier YAML.</p>
+  <pre><code>version: '3.8'
+services:
+  mongodb:
+    image: mongo:6.0
+    volumes:
+      - mongodb_data:/data/db   # Persistance des données
+    networks: [portfolio_network]
+
+  backend:
+    image: anoor9s6/portfolio-backend:latest
+    environment:
+      MONGODB_URI: mongodb://mongodb:27017/portfolio  # Nom du service !
+    depends_on:
+      mongodb:
+        condition: service_healthy  # Attendre que MongoDB soit prêt
+    networks: [portfolio_network]
+
+  frontend:
+    image: anoor9s6/portfolio-frontend:latest
+    ports:
+      - "80:80"
+    depends_on: [backend]
+
+volumes:
+  mongodb_data:    # Persiste même si le container est supprimé
+
+networks:
+  portfolio_network:   # Réseau isolé pour les 3 services</code></pre>
+
+  <h3>Networking Docker</h3>
+  <p>Les containers d'un même <code>docker-compose.yml</code> se parlent par <strong>nom de service</strong>, pas par IP. C'est pourquoi le backend utilise <code>mongodb:27017</code> et non <code>localhost:27017</code>.</p>
+  <div class="schema">
+[portfolio_network]
+    ├── frontend   → peut appeler backend:5000
+    ├── backend    → peut appeler mongodb:27017
+    └── mongodb    → non accessible depuis l'extérieur
+  </div>
+  <div class="warning-box">
+    <div class="box-title">⚠️ Erreur classique</div>
+    Utiliser <code>localhost</code> dans une variable d'environnement d'un container pour pointer vers un autre container. <code>localhost</code> dans un container = le container lui-même, pas un autre service.
+  </div>
+
+  <h3>Commandes essentielles</h3>
+  <table>
+    <tr><th>Commande</th><th>Action</th></tr>
+    <tr><td><code>docker build -t nom:tag .</code></td><td>Construire une image</td></tr>
+    <tr><td><code>docker run -d -p 80:80 nom:tag</code></td><td>Lancer un container en arrière-plan</td></tr>
+    <tr><td><code>docker-compose up -d</code></td><td>Démarrer tous les services</td></tr>
+    <tr><td><code>docker-compose down</code></td><td>Arrêter et supprimer les containers</td></tr>
+    <tr><td><code>docker-compose logs -f service</code></td><td>Suivre les logs d'un service</td></tr>
+    <tr><td><code>docker ps</code></td><td>Lister les containers actifs</td></tr>
+    <tr><td><code>docker exec -it container sh</code></td><td>Entrer dans un container</td></tr>
+    <tr><td><code>docker push nom:tag</code></td><td>Pousser vers Docker Hub</td></tr>
+  </table>
+</div>
+
+<!-- CHAPITRE 3 -->
+<div class="chapter">
+  <div class="chapter-header">
+    <div class="chapter-num">Chapitre 3</div>
+    <h2>Jenkins — Pipeline CI/CD</h2>
+  </div>
+
+  <h3>CI vs CD — Définitions</h3>
+  <table>
+    <tr><th>Terme</th><th>Signification</th><th>Ce que ça fait</th></tr>
+    <tr><td><strong>CI</strong></td><td>Continuous Integration</td><td>Chaque push déclenche build + tests + analyse qualité</td></tr>
+    <tr><td><strong>CD</strong></td><td>Continuous Delivery</td><td>Le code validé est automatiquement prêt à déployer</td></tr>
+    <tr><td><strong>CD</strong></td><td>Continuous Deployment</td><td>Le déploiement en prod est aussi automatique</td></tr>
+  </table>
+  <p>Ton pipeline implémente <strong>CI + Continuous Delivery</strong> : le déploiement AWS nécessite une approbation manuelle (<code>input</code>), ce qui est une bonne pratique pour la production.</p>
+
+  <h3>Flux du pipeline</h3>
+  <div class="schema">
+GitHub Push
+    │
+    ▼  (webhook)
+Jenkins detecte le push
+    │
+    ▼
+[Checkout] → [SonarQube] → [Quality Gate]
+    │
+    ▼ (si QG OK)
+[Build Backend] ══╗
+                  ║ (parallèle)
+[Build Frontend] ═╝
+    │
+    ▼
+[Push Docker Hub]
+    │
+    ├── DEPLOY_TARGET=kubernetes ──────────────────────┐
+    │   [Terraform Init+Validate]                       │
+    │   [Terraform Plan]                                │
+    │   [⚠️ Approbation manuelle]                       │
+    │   [Terraform Apply] → EC2 AWS                     │
+    │   [Deploy K8s] → Docker Desktop                   │
+    │                                                   │
+    └── DEPLOY_TARGET=docker-compose ──────────────────┘
+        [docker-compose up]
+  </div>
+
+  <h3>Anatomie du Jenkinsfile</h3>
+  <pre><code>pipeline {
+    agent any           // Utilise n'importe quel agent disponible
+
+    parameters {        // Paramètres saisis au lancement
+        choice(name: 'DEPLOY_TARGET', choices: ['kubernetes', 'docker-compose'])
+        password(name: 'MONGO_PASSWORD', defaultValue: '')
+    }
+
+    triggers { githubPush() }   // Déclenché automatiquement par GitHub
+
+    environment {               // Variables disponibles dans tous les stages
+        DOCKERHUB_NAMESPACE = 'anoor9s6'
+        TF_DIR = 'terraform/scenario1-free-tier'
+    }
+
+    stages {
+        stage('Build') {
+            when { expression { params.DEPLOY_TARGET == 'kubernetes' } }
+            parallel {          // Exécution simultanée
+                stage('Backend')  { steps { sh '...' } }
+                stage('Frontend') { steps { sh '...' } }
+            }
+        }
+    }
+
+    post {
+        success { mail to: '...', subject: '✅ ...' }
+        failure { mail to: '...', subject: '❌ ...' }
+        always  { cleanWs() }   // Nettoyage systématique
+    }
+}</code></pre>
+
+  <h3>Gestion des credentials</h3>
+  <p>Les secrets ne doivent <strong>jamais</strong> apparaître en clair dans le Jenkinsfile. Jenkins les injecte via <code>withCredentials</code> et les masque automatiquement dans les logs.</p>
+  <table>
+    <tr><th>Type de credential</th><th>Syntaxe Jenkins</th><th>Usage</th></tr>
+    <tr><td>Username/Password</td><td><code>usernamePassword(...)</code></td><td>Docker Hub</td></tr>
+    <tr><td>Secret text</td><td><code>string(...)</code></td><td>Tokens, mots de passe</td></tr>
+    <tr><td>Secret file</td><td><code>file(...)</code></td><td>kubeconfig, certificats</td></tr>
+    <tr><td>AWS Credentials</td><td><code>$class: 'AmazonWebServicesCredentialsBinding'</code></td><td>Access Key + Secret Key AWS</td></tr>
+  </table>
+  <div class="warning-box">
+    <div class="box-title">⚠️ Leçon apprise — Styles incompatibles</div>
+    On ne peut pas mélanger le style <code>$class:</code> (plugin AWS) avec le style natif (<code>string()</code>, <code>usernamePassword()</code>) dans le même <code>withCredentials([...])</code>. Jenkins plante silencieusement sans message d'erreur.
+    <br><br><strong>Solution</strong> : utiliser deux blocs <code>withCredentials</code> séquentiels, ou utiliser un paramètre pipeline <code>password</code> pour éviter le credential Jenkins.
+  </div>
+
+  <h3>Images distroless — leçon clé</h3>
+  <p>Certaines images Docker officielles sont <strong>distroless</strong> : elles ne contiennent que le binaire principal, sans shell, sans gestionnaire de paquets, sans rien d'autre. C'est plus sécurisé mais impose des contraintes.</p>
+  <table>
+    <tr><th>Image</th><th>Type</th><th>Problème rencontré</th><th>Solution</th></tr>
+    <tr><td><code>bitnami/kubectl</code></td><td>Distroless</td><td><code>unknown command "sh"</code></td><td>Utiliser <code>alpine/k8s</code> qui inclut un shell</td></tr>
+    <tr><td><code>hashicorp/terraform</code></td><td>Contient <code>/bin/sh</code></td><td><code>no command "sh"</code> car entrypoint=terraform</td><td><code>--entrypoint /bin/sh</code> ou installer terraform directement sur l'agent</td></tr>
+  </table>
+</div>
+
+<!-- CHAPITRE 4 -->
+<div class="chapter">
+  <div class="chapter-header">
+    <div class="chapter-num">Chapitre 4</div>
+    <h2>SonarQube — Qualité du code</h2>
+  </div>
+
+  <h3>Qu'est-ce que l'analyse statique ?</h3>
+  <p>L'analyse statique examine le code source <strong>sans l'exécuter</strong>. Elle détecte les problèmes de qualité, les failles de sécurité et les mauvaises pratiques en analysant la structure du code.</p>
+
+  <h3>Les 4 catégories SonarQube</h3>
+  <table>
+    <tr><th>Catégorie</th><th>Description</th><th>Exemple</th></tr>
+    <tr><td>🐛 <strong>Bug</strong></td><td>Code qui va probablement planter</td><td>Variable utilisée avant d'être définie</td></tr>
+    <tr><td>🔒 <strong>Vulnerability</strong></td><td>Faille de sécurité connue</td><td>Mot de passe en dur dans le code</td></tr>
+    <tr><td>🔧 <strong>Code Smell</strong></td><td>Code qui fonctionne mais difficile à maintenir</td><td>Fonction de 500 lignes</td></tr>
+    <tr><td>📋 <strong>Duplication</strong></td><td>Code copié-collé</td><td>Même logique dans 5 endroits</td></tr>
+  </table>
+
+  <h3>Quality Gate</h3>
+  <p>Le Quality Gate est un ensemble de conditions qui doivent être respectées pour que le code soit considéré comme acceptable. Dans ton pipeline :</p>
+  <pre><code>stage('Quality Gate') {
+    steps {
+        timeout(time: 5, unit: 'MINUTES') {
+            waitForQualityGate abortPipeline: true  // Bloque si QG échoue
+        }
+    }
+}</code></pre>
+  <p>Si le Quality Gate échoue → le pipeline s'arrête → les images Docker ne sont pas buildées → rien n'est déployé. C'est le comportement voulu : on ne déploie jamais du code de mauvaise qualité.</p>
+
+  <h3>Configuration dans ton projet</h3>
+  <p>Le fichier <code>sonar-project.properties</code> à la racine configure l'analyse :</p>
+  <pre><code>sonar.projectKey=anoors_portfolio_react
+sonar.sources=src,backend
+sonar.exclusions=**/node_modules/**,**/build/**,**/dist/**
+sonar.host.url=http://sonarqube:9000</code></pre>
+
+  <div class="info-box">
+    <div class="box-title">ℹ️ Langages analysés dans ton projet</div>
+    JavaScript/JSX (React + Node.js) · CSS · JSON · Dockerfile — soit 25 fichiers source lors des derniers builds.
+  </div>
+</div>
+
+<!-- CHAPITRE 5 -->
+<div class="chapter">
+  <div class="chapter-header">
+    <div class="chapter-num">Chapitre 5</div>
+    <h2>Kubernetes — Orchestration de containers</h2>
+  </div>
+
+  <h3>Pourquoi Kubernetes ?</h3>
+  <p>Docker Compose est excellent en développement. En production, il manque :</p>
+  <table>
+    <tr><th>Besoin</th><th>Docker Compose</th><th>Kubernetes</th></tr>
+    <tr><td>Redémarrage auto si crash</td><td>✅ (restart: unless-stopped)</td><td>✅ natif</td></tr>
+    <tr><td>Scaling horizontal</td><td>❌ manuel</td><td>✅ <code>replicas: 3</code></td></tr>
+    <tr><td>Rolling update sans downtime</td><td>❌</td><td>✅ natif</td></tr>
+    <tr><td>Load balancing</td><td>❌</td><td>✅ via Services</td></tr>
+    <tr><td>Multi-nœuds</td><td>❌</td><td>✅ cluster</td></tr>
+    <tr><td>Health checks avancés</td><td>✅ basique</td><td>✅ liveness + readiness</td></tr>
+  </table>
+
+  <h3>Concepts fondamentaux</h3>
+  <h4>Pod</h4>
+  <p>La plus petite unité Kubernetes. Un pod encapsule un ou plusieurs containers qui partagent le même réseau et le même stockage. En pratique : 1 pod = 1 container applicatif.</p>
+
+  <h4>Deployment</h4>
+  <p>Gère un ensemble de pods identiques (replicas). Garantit que le nombre désiré de replicas tourne en permanence. Gère les rolling updates.</p>
+  <pre><code>spec:
+  replicas: 2                    # Toujours 2 pods actifs
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1                # Max 1 pod supplémentaire pendant la MAJ
+      maxUnavailable: 0          # Jamais de pod indisponible → zéro downtime</code></pre>
+
+  <h4>Service</h4>
+  <p>Expose des pods sur le réseau avec une IP stable. Les pods peuvent changer d'IP à chaque redémarrage, le Service reste stable.</p>
+  <table>
+    <tr><th>Type</th><th>Accès</th><th>Usage dans ton projet</th></tr>
+    <tr><td>ClusterIP</td><td>Interne au cluster uniquement</td><td>Backend (port 5000)</td></tr>
+    <tr><td>LoadBalancer</td><td>IP externe</td><td>Frontend (port 80)</td></tr>
+    <tr><td>NodePort</td><td>Port du nœud</td><td>Non utilisé</td></tr>
+  </table>
+
+  <h4>Namespace</h4>
+  <p>Espace d'isolation logique. Ton application tourne dans le namespace <code>portfolio</code>, séparé du namespace <code>kube-system</code> (composants Kubernetes internes).</p>
+
+  <h4>Ingress</h4>
+  <p>Reverse proxy HTTP au niveau du cluster. Une seule IP publique, le routage est basé sur le chemin URL :</p>
+  <pre><code>/ → portfolio-frontend-service:80
+/api → portfolio-backend-service:5000</code></pre>
+
+  <h3>Architecture K8s du projet</h3>
+  <div class="schema">
+Internet
+    │
+    ▼
+[Ingress : portfolio-ingress]
+    │
+    ├── /     → Service: portfolio-frontend-service (LoadBalancer :80)
+    │                └── Pod frontend #1  (Nginx + React)
+    │                └── Pod frontend #2  (Nginx + React)
+    │
+    └── /api  → Service: portfolio-backend-service (ClusterIP :5000)
+                     └── Pod backend #1  (Node.js)
+                     └── Pod backend #2  (Node.js)
+                              └── → MongoDB (StatefulSet, PVC 5Go)
+
+Namespace: portfolio
+Cluster: Docker Desktop (kind, 2 nodes)
+  </div>
+
+  <h3>Liveness vs Readiness Probe</h3>
+  <table>
+    <tr><th>Probe</th><th>Question posée</th><th>Action si échec</th></tr>
+    <tr><td><strong>livenessProbe</strong></td><td>Le container est-il encore vivant ?</td><td>Redémarrer le container</td></tr>
+    <tr><td><strong>readinessProbe</strong></td><td>Le container est-il prêt à recevoir du trafic ?</td><td>Retirer du load balancer</td></tr>
+  </table>
+
+  <h3>Rolling Update — comment ça marche</h3>
+  <p>Quand tu exécutes <code>kubectl rollout restart deployment/portfolio-backend</code> :</p>
+  <div class="schema">
+Avant : [Pod v1] [Pod v1]
+
+Étape 1 : Créer [Pod v2]  → [Pod v1] [Pod v1] [Pod v2]
+Étape 2 : [Pod v2] est Ready → supprimer un [Pod v1]
+           → [Pod v1] [Pod v2]
+Étape 3 : Créer [Pod v2']  → [Pod v1] [Pod v2] [Pod v2']
+Étape 4 : [Pod v2'] est Ready → supprimer [Pod v1]
+           → [Pod v2] [Pod v2']
+
+Après : [Pod v2] [Pod v2']  ← Zéro downtime !
+  </div>
+
+  <h3>Problème Jenkins → K8s (Docker Desktop)</h3>
+  <p>C'est l'une des erreurs les plus instructives du projet. Trois problèmes enchaînés :</p>
+  <table class="lesson-table">
+    <tr><th>#</th><th>Erreur</th><th>Cause</th><th>Solution</th></tr>
+    <tr><td>1</td><td><code>cp: omitting directory</code></td><td>Jenkins monte un Secret file comme un <strong>dossier</strong> dans <code>docker -v</code></td><td>Lire le fichier avec <code>find</code>, encoder en base64, passer via <code>-e</code></td></tr>
+    <tr><td>2</td><td><code>x509: not host.docker.internal</code> (minikube)</td><td>Kubeconfig pointait vers minikube (port 64889) au lieu de Docker Desktop (port 57275)</td><td>Régénérer le kubeconfig avec le bon contexte <code>docker-desktop</code></td></tr>
+    <tr><td>3</td><td><code>x509: not host.docker.internal</code> (docker-desktop)</td><td>Le cert TLS est signé pour <code>localhost</code>, pas <code>host.docker.internal</code></td><td>Ajouter <code>tls-server-name: localhost</code> dans le kubeconfig patché</td></tr>
+  </table>
+</div>
+
+<!-- CHAPITRE 6 -->
+<div class="chapter">
+  <div class="chapter-header">
+    <div class="chapter-num">Chapitre 6</div>
+    <h2>Terraform — Infrastructure as Code</h2>
+  </div>
+
+  <h3>Le problème que Terraform résout</h3>
+  <table>
+    <tr><th>Sans Terraform</th><th>Avec Terraform</th></tr>
+    <tr><td>Infrastructure créée manuellement dans la console AWS</td><td>Infrastructure définie en code HCL</td></tr>
+    <tr><td>Non reproductible (qui se souvient de tous les clics ?)</td><td>Reproductible à l'identique en 2 min</td></tr>
+    <tr><td>Non versionnable (pas d'historique)</td><td>Git : historique complet des changements</td></tr>
+    <tr><td>Non collaboratif</td><td>Toute l'équipe voit l'infrastructure</td></tr>
+    <tr><td>Destruction manuelle et risquée</td><td><code>terraform destroy</code> en une commande</td></tr>
+  </table>
+
+  <h3>Cycle de vie Terraform</h3>
+  <div class="schema">
+terraform init
+    │ → Télécharge les providers (AWS, TLS, local...)
+    │ → Configure le backend (S3 ou local)
+    ▼
+terraform validate
+    │ → Vérifie la syntaxe HCL
+    │ → Vérifie la cohérence des références entre ressources
+    ▼
+terraform plan
+    │ → Compare l'état désiré (code) avec l'état réel (tfstate)
+    │ → Affiche un diff : + créer, ~ modifier, - détruire
+    │ → NE CRÉE RIEN — c'est un dry-run
+    ▼
+terraform apply
+    │ → Exécute le plan
+    │ → Met à jour le tfstate
+    │ → Crée/modifie/détruit les ressources réelles
+    ▼
+terraform destroy
+    └ → Détruit toutes les ressources du tfstate
+  </div>
+
+  <h3>Le State — concept central</h3>
+  <p>Le fichier <code>terraform.tfstate</code> est la mémoire de Terraform. Il mappe chaque ressource du code à sa contrepartie réelle dans AWS (avec son ID, ses propriétés, ses dépendances).</p>
+  <div class="error-box">
+    <div class="box-title">❌ Ne jamais faire</div>
+    Committer <code>terraform.tfstate</code> dans git. Il contient des données sensibles : IPs, ARNs, parfois des mots de passe en clair. <strong>Leçon apprise sur ce projet</strong> : les fichiers tfstate ont été trouvés dans le repo et supprimés via <code>git rm --cached</code>.
+  </div>
+
+  <h3>Remote State (S3 + DynamoDB)</h3>
+  <p>Pour les équipes, le state doit être centralisé et verrouillé :</p>
+  <pre><code>terraform {
+  backend "s3" {
+    bucket         = "anoors-portfolio-tfstate-123456789"  # S3 versionné + chiffré
+    key            = "scenario1/terraform.tfstate"
+    region         = "us-east-1"
+    encrypt        = true
+    dynamodb_table = "anoors-portfolio-terraform-locks"    # Verrou = 1 apply à la fois
+  }
+}</code></pre>
+  <table>
+    <tr><th>Ressource</th><th>Rôle</th></tr>
+    <tr><td>S3 Bucket (versionné)</td><td>Stocke le tfstate. Le versioning permet de revenir à un état précédent.</td></tr>
+    <tr><td>S3 Bucket (chiffré AES-256)</td><td>Protège les secrets contenus dans le state</td></tr>
+    <tr><td>DynamoDB Table</td><td>Lock distribué : empêche 2 <code>terraform apply</code> simultanés</td></tr>
+  </table>
+
+  <h3>Structure des fichiers Terraform</h3>
+  <table>
+    <tr><th>Fichier</th><th>Rôle</th></tr>
+    <tr><td><code>provider.tf</code></td><td>Déclare les providers (AWS, TLS...) et leurs versions</td></tr>
+    <tr><td><code>variables.tf</code></td><td>Déclare les variables avec leur type et leur validation</td></tr>
+    <tr><td><code>terraform.tfvars</code></td><td>Valeurs concrètes des variables — <strong>NE PAS COMMITTER</strong></td></tr>
+    <tr><td><code>terraform.tfvars.example</code></td><td>Template sans secrets — committable</td></tr>
+    <tr><td><code>main.tf</code></td><td>Définit les ressources : VPC, EC2, SG, EIP...</td></tr>
+    <tr><td><code>outputs.tf</code></td><td>Valeurs exportées après l'apply (IP, URL, commande SSH...)</td></tr>
+    <tr><td><code>backend.tf</code></td><td>Ressources S3 + DynamoDB pour le remote state</td></tr>
+  </table>
+
+  <h3>Infrastructure AWS Free Tier créée</h3>
+  <div class="schema">
+AWS (us-east-1)
+└── VPC : 10.0.0.0/16
+    ├── Internet Gateway
+    ├── Route Table (0.0.0.0/0 → IGW)
+    ├── Subnet public : 10.0.1.0/24 (us-east-1a)
+    │   └── EC2 t2.micro (Ubuntu 22.04)
+    │       ├── Security Group
+    │       │   ├── :22   SSH (depuis votre IP)
+    │       │   ├── :80   HTTP Frontend
+    │       │   ├── :443  HTTPS
+    │       │   └── :5000 API Backend
+    │       ├── EBS 20Go gp2 (chiffré)
+    │       ├── Clé SSH RSA 4096 (générée par Terraform)
+    │       └── User Data → installe Docker + démarre l'app
+    └── Elastic IP (statique, attachée à l'EC2)
+  </div>
+
+  <h3>User Data — démarrage automatique</h3>
+  <p>Le script <code>user_data.sh</code> est exécuté automatiquement au premier démarrage de l'EC2. Sans SSH, il :</p>
+  <ol>
+    <li>Met à jour Ubuntu et installe les dépendances</li>
+    <li>Installe Docker CE (version officielle)</li>
+    <li>Installe Docker Compose</li>
+    <li>Génère <code>docker-compose.yml</code> avec les variables injectées par Terraform</li>
+    <li>Lance <code>docker-compose pull && docker-compose up -d</code></li>
+  </ol>
+
+  <h3>Estimation des coûts Free Tier</h3>
+  <table>
+    <tr><th>Ressource</th><th>Free Tier (12 mois)</th><th>Après Free Tier</th></tr>
+    <tr><td>EC2 t2.micro</td><td>750h/mois gratuit</td><td>~$8.50/mois</td></tr>
+    <tr><td>EBS 20 Go gp2</td><td>30 Go/mois gratuit</td><td>~$2/mois</td></tr>
+    <tr><td>Elastic IP</td><td>Gratuit si attachée</td><td>~$3.60/mois libre</td></tr>
+    <tr><td>S3 + DynamoDB</td><td>5 Go + 25 Go gratuit</td><td>Négligeable</td></tr>
+    <tr><td><strong>Total</strong></td><td><strong>~$0</strong></td><td><strong>~$14/mois</strong></td></tr>
+  </table>
+</div>
+
+<!-- CHAPITRE 7 -->
+<div class="chapter">
+  <div class="chapter-header">
+    <div class="chapter-num">Chapitre 7</div>
+    <h2>La chaîne CI/CD complète</h2>
+  </div>
+
+  <h3>Vue d'ensemble</h3>
+  <p>Tous les outils s'articulent autour d'un flux unique déclenché par un simple <code>git push</code> :</p>
+  <div class="schema">
+┌─────────────────────────────────────────────────────────────┐
+│                      DÉVELOPPEUR                            │
+│   git push → GitHub                                         │
+└─────────────────────┬───────────────────────────────────────┘
+                      │ Webhook
+                      ▼
+┌─────────────────────────────────────────────────────────────┐
+│                      JENKINS                                │
+│  1. Checkout du code depuis GitHub                          │
+│  2. SonarQube analysis → Quality Gate                       │
+│  3. docker build (backend + frontend en parallèle)          │
+│  4. docker push → Docker Hub                                │
+│  5a. [kubernetes] terraform plan/apply → EC2 AWS            │
+│  5b. [kubernetes] kubectl apply → Docker Desktop K8s        │
+│  5c. [docker-compose] docker-compose up                     │
+└───────────────┬──────────────────────────────────┬──────────┘
+                │                                  │
+                ▼                                  ▼
+┌───────────────────────┐             ┌────────────────────────┐
+│     DOCKER HUB        │             │     SONARQUBE          │
+│  anoor9s6/portfolio-  │             │  Dashboard qualité     │
+│  backend:v1.0.250     │             │  Bugs, vulnerabilities │
+│  frontend:v1.0.250    │             │  Code smells           │
+└───────────┬───────────┘             └────────────────────────┘
+            │ docker pull
+   ┌─────────┴──────────┐
+   │                    │
+   ▼                    ▼
+┌──────────┐    ┌──────────────────────┐
+│  AWS EC2 │    │  Kubernetes          │
+│  t2.micro│    │  Docker Desktop      │
+│  Docker  │    │  2 nodes (kind)      │
+│  Compose │    │  portfolio namespace │
+└──────────┘    └──────────────────────┘
+  </div>
+
+  <h3>Docker Hub — le lien entre Jenkins et les cibles</h3>
+  <p>Docker Hub est le <strong>registre d'images</strong>. Jenkins construit et pousse, les cibles de déploiement pullent. C'est ce qui rend le déploiement indépendant de Jenkins : AWS et Kubernetes récupèrent toujours la dernière version validée.</p>
+  <div class="info-box">
+    <div class="box-title">ℹ️ Stratégie de tags</div>
+    Deux tags sont poussés pour chaque build :
+    <ul>
+      <li><code>v1.0.250</code> — tag versionné (immuable, lié au numéro de build Jenkins)</li>
+      <li><code>latest</code> — toujours la dernière version (utilisé par K8s avec <code>imagePullPolicy: Always</code>)</li>
+    </ul>
+  </div>
+
+  <h3>Notifications par email</h3>
+  <p>Le bloc <code>post</code> envoie un email à chaque fin de pipeline :</p>
+  <ul>
+    <li>✅ Succès : job name, numéro de build, durée, URL Jenkins</li>
+    <li>❌ Échec : mêmes infos + lien direct vers les logs</li>
+    <li>🔄 Toujours : <code>cleanWs()</code> nettoie le workspace</li>
+  </ul>
+</div>
+
+<!-- CHAPITRE 8 -->
+<div class="chapter">
+  <div class="chapter-header">
+    <div class="chapter-num">Chapitre 8</div>
+    <h2>Sécurité — Bonnes pratiques appliquées</h2>
+  </div>
+
+  <h3>Principe du moindre privilège</h3>
+  <p>Chaque composant n'a accès qu'à ce dont il a strictement besoin :</p>
+  <table>
+    <tr><th>Composant</th><th>Accès limité à</th></tr>
+    <tr><td>Container frontend (Nginx)</td><td>Port 80 en lecture, fichiers statiques</td></tr>
+    <tr><td>Container backend (Node.js)</td><td>Port 5000, connexion MongoDB interne</td></tr>
+    <tr><td>MongoDB</td><td>Port 27017 interne uniquement, pas exposé</td></tr>
+    <tr><td>Security Group AWS</td><td>SSH depuis votre IP uniquement en prod</td></tr>
+    <tr><td>IAM Roles EKS (scénario 2)</td><td>Policies minimales par rôle</td></tr>
+  </table>
+
+  <h3>Gestion des secrets</h3>
+  <table>
+    <tr><th>Secret</th><th>Stockage</th><th>Accès</th></tr>
+    <tr><td>Mots de passe MongoDB</td><td>Credentials Jenkins / paramètre pipeline</td><td>Jenkins uniquement</td></tr>
+    <tr><td>AWS Access Key</td><td>Credential Jenkins (type AWS)</td><td>Jenkins uniquement</td></tr>
+    <tr><td>Docker Hub password</td><td>Credential Jenkins (username/password)</td><td>Jenkins uniquement</td></tr>
+    <tr><td>Kubeconfig</td><td>Credential Jenkins (secret file)</td><td>Jenkins uniquement</td></tr>
+    <tr><td>Variables d'env app</td><td>Fichier .env (gitignore)</td><td>Local uniquement</td></tr>
+    <tr><td>terraform.tfvars</td><td>Local + généré par Jenkins</td><td>Jamais dans git</td></tr>
+  </table>
+
+  <h3>Sécurité des images Docker</h3>
+  <ul>
+    <li>Utilisateur non-root dans le Dockerfile backend : <code>adduser -S nextjs -u 1001</code></li>
+    <li>Images de base officielles et versionnées (pas de <code>:latest</code> pour les bases)</li>
+    <li>Multi-stage build : pas d'outils de build dans l'image finale</li>
+  </ul>
+
+  <h3>Chiffrement au repos (AWS)</h3>
+  <ul>
+    <li>Volume EBS chiffré : <code>encrypted = true</code> dans Terraform</li>
+    <li>Bucket S3 state chiffré : AES-256</li>
+    <li>Bucket S3 privé : <code>block_public_access = true</code></li>
+  </ul>
+
+  <h3>Ce qui doit être dans .gitignore</h3>
+  <pre><code># Secrets applicatifs
+.env
+backend/.env
+
+# Terraform — ne jamais committer
+terraform/**/*.tfvars
+terraform/**/*.tfstate
+terraform/**/*.tfstate.backup
+terraform/**/.terraform/
+
+# Kubernetes — clés privées
+kubeconfig
+kubeconfig-jenkins.yaml
+
+# Clés SSH générées
+*.pem</code></pre>
+</div>
+
+<!-- CHAPITRE 9 — ERREURS CLÉS -->
+<div class="chapter">
+  <div class="chapter-header">
+    <div class="chapter-num">Chapitre 9</div>
+    <h2>Erreurs clés rencontrées et solutions</h2>
+  </div>
+
+  <p>Ce chapitre est l'un des plus précieux du cours. Ces erreurs ont été rencontrées en conditions réelles sur ce projet.</p>
+
+  <h3>Tableau de bord des erreurs</h3>
+  <table class="lesson-table">
+    <tr><th>#</th><th>Erreur</th><th>Contexte</th><th>Cause</th><th>Solution</th></tr>
+    <tr>
+      <td>1</td>
+      <td><code>unknown command "sh" for kubectl</code></td>
+      <td>Stage Deploy K8s</td>
+      <td><code>bitnami/kubectl</code> est distroless : pas de shell</td>
+      <td>Utiliser <code>alpine/k8s</code> qui inclut kubectl + sh + sed</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td><code>cp: omitting directory</code></td>
+      <td>Montage kubeconfig via <code>-v</code></td>
+      <td>Jenkins monte un Secret file comme un <em>dossier</em> dans <code>docker -v</code>, pas un fichier</td>
+      <td>Encoder le fichier en base64, passer via <code>-e KUBECONFIG_B64</code>, décoder dans le container</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td><code>x509: certificate not valid for host.docker.internal</code></td>
+      <td>kubectl depuis Jenkins container</td>
+      <td>Le cert TLS est signé pour <code>localhost</code>, pas pour <code>host.docker.internal</code></td>
+      <td>Ajouter <code>tls-server-name: localhost</code> dans le kubeconfig après le patch d'adresse</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td><code>withCredentials</code> silencieux</td>
+      <td>Stage Terraform Plan</td>
+      <td>Mélange de style <code>$class:</code> (AWS) avec <code>string()</code> (natif) dans le même bloc</td>
+      <td>Utiliser deux blocs <code>withCredentials</code> séquentiels, ou un paramètre pipeline <code>password</code></td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td><code>terraform.tfvars does not exist</code></td>
+      <td>Terraform Plan dans docker run</td>
+      <td>Fichier créé sur l'hôte Jenkins mais Terraform init dit "répertoire vide"</td>
+      <td>Installer Terraform directement sur l'agent Jenkins (pas via docker run)</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td><code>&amp;&amp;</code> interprété par Jenkins</td>
+      <td>docker run avec <code>-c "cmd1 &amp;&amp; cmd2"</code></td>
+      <td>Le <code>sh '''...'''</code> Jenkins interprète le <code>&amp;&amp;</code> avant de le passer au container</td>
+      <td>Écrire les commandes dans un fichier script ou installer l'outil directement sur l'agent</td>
+    </tr>
+    <tr>
+      <td>7</td>
+      <td><code>tfstate</code> commité dans git</td>
+      <td>Sécurité</td>
+      <td>Oubli d'ajouter le pattern dans <code>.gitignore</code></td>
+      <td><code>git rm --cached terraform.tfstate</code> + ajouter <code>terraform/**/*.tfstate*</code> au gitignore</td>
+    </tr>
+    <tr>
+      <td>8</td>
+      <td><code>Terraform initialized in an empty directory</code></td>
+      <td>docker run terraform</td>
+      <td>Le working dir du container ne contenait pas les fichiers .tf (volume mal monté)</td>
+      <td>Installer Terraform sur l'agent, utiliser <code>cd ${WORKSPACE}/${TF_DIR}</code> directement</td>
+    </tr>
+  </table>
+
+  <h3>Pattern récurrent — images distroless</h3>
+  <div class="warning-box">
+    <div class="box-title">⚠️ Règle à retenir</div>
+    Avant d'utiliser une image Docker pour exécuter des commandes shell dans un pipeline, vérifier qu'elle contient un shell :
+    <pre><code>docker run --rm image:tag sh -c "echo ok"</code></pre>
+    Si ça renvoie une erreur, l'image est distroless. Solutions :
+    <ul>
+      <li>Chercher une variante avec <code>-alpine</code> ou <code>-slim</code></li>
+      <li>Installer l'outil directement sur l'agent Jenkins</li>
+      <li>Utiliser <code>--entrypoint /bin/sh</code> si le shell existe mais n'est pas l'entrypoint par défaut</li>
+    </ul>
+  </div>
+
+  <h3>Pattern récurrent — secrets Jenkins dans docker run</h3>
+  <div class="warning-box">
+    <div class="box-title">⚠️ Règle à retenir</div>
+    <code>withCredentials([file(..., variable: 'MY_FILE')])</code> crée un dossier temporaire, pas un fichier. La variable pointe vers le dossier parent.<br><br>
+    <strong>Pour passer un fichier secret à un container Docker :</strong>
+    <pre><code>KUBE_FILE=$(find "$KUBECONFIG_FILE" -type f | head -1)
+KUBECONFIG_B64=$(base64 -w 0 "$KUBE_FILE")
+docker run -e KUBECONFIG_B64="$KUBECONFIG_B64" ...
+# Dans le container :
+echo "$KUBECONFIG_B64" | base64 -d > /tmp/kubeconfig</code></pre>
+  </div>
+</div>
+
+<!-- PAGE FINALE -->
+<div class="chapter" style="page-break-before: always;">
+  <div style="text-align:center; padding: 60px 0;">
+    <div style="font-size: 60px; margin-bottom: 20px;">🎓</div>
+    <h2 style="font-size: 28px; color: #0f3460; border: none; padding: 0; margin-bottom: 16px;">Ce que tu as construit</h2>
+    <p style="font-size: 16px; color: #64748b; max-width: 600px; margin: 0 auto 40px auto;">
+      Un pipeline DevOps complet de bout en bout, sur un projet réel, avec des outils utilisés en production dans l'industrie.
+    </p>
+    <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; max-width: 700px; margin: 0 auto;">
+      <div style="background: #f0fdf4; border: 2px solid #22c55e; border-radius: 12px; padding: 16px 20px; text-align: center; min-width: 140px;">
+        <div style="font-size: 28px;">⚛️</div>
+        <div style="font-weight: 700; color: #15803d;">React 19</div>
+        <div style="font-size: 11px; color: #64748b;">Frontend SPA</div>
+      </div>
+      <div style="background: #f0fdf4; border: 2px solid #22c55e; border-radius: 12px; padding: 16px 20px; text-align: center; min-width: 140px;">
+        <div style="font-size: 28px;">🐳</div>
+        <div style="font-weight: 700; color: #15803d;">Docker</div>
+        <div style="font-size: 11px; color: #64748b;">Conteneurisation</div>
+      </div>
+      <div style="background: #f0fdf4; border: 2px solid #22c55e; border-radius: 12px; padding: 16px 20px; text-align: center; min-width: 140px;">
+        <div style="font-size: 28px;">🔧</div>
+        <div style="font-weight: 700; color: #15803d;">Jenkins</div>
+        <div style="font-size: 11px; color: #64748b;">CI/CD Pipeline</div>
+      </div>
+      <div style="background: #f0fdf4; border: 2px solid #22c55e; border-radius: 12px; padding: 16px 20px; text-align: center; min-width: 140px;">
+        <div style="font-size: 28px;">📊</div>
+        <div style="font-weight: 700; color: #15803d;">SonarQube</div>
+        <div style="font-size: 11px; color: #64748b;">Qualité code</div>
+      </div>
+      <div style="background: #f0fdf4; border: 2px solid #22c55e; border-radius: 12px; padding: 16px 20px; text-align: center; min-width: 140px;">
+        <div style="font-size: 28px;">☸️</div>
+        <div style="font-weight: 700; color: #15803d;">Kubernetes</div>
+        <div style="font-size: 11px; color: #64748b;">Orchestration</div>
+      </div>
+      <div style="background: #f0fdf4; border: 2px solid #22c55e; border-radius: 12px; padding: 16px 20px; text-align: center; min-width: 140px;">
+        <div style="font-size: 28px;">🏗️</div>
+        <div style="font-weight: 700; color: #15803d;">Terraform</div>
+        <div style="font-size: 11px; color: #64748b;">IaC AWS</div>
+      </div>
+    </div>
+
+    <div style="margin-top: 60px; padding: 30px; background: #1a1a2e; border-radius: 12px; color: white; max-width: 600px; margin: 60px auto 0 auto;">
+      <div style="font-size: 18px; font-weight: 700; margin-bottom: 12px; color: #a8d8ea;">Prochaine étape</div>
+      <div style="font-size: 28px; margin-bottom: 8px;">📈 Prometheus + Grafana</div>
+      <div style="color: #94a3b8; font-size: 14px;">
+        Ajouter la couche observabilité :<br>
+        métriques · alertes · dashboards · monitoring
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Bouton d'impression flottant
+  const btn = document.createElement('button');
+  btn.innerHTML = '🖨️ Exporter en PDF';
+  btn.style.cssText = 'position:fixed;bottom:30px;right:30px;background:#e94560;color:white;border:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 4px 12px rgba(233,69,96,0.4);z-index:9999;';
+  btn.onclick = () => window.print();
+  document.body.appendChild(btn);
+</script>
+</body>
+</html>
