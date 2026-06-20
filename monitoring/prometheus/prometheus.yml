@@ -1,0 +1,55 @@
+###############################################################
+# prometheus.yml — Configuration Prometheus
+# Scrape toutes les 15s par défaut
+###############################################################
+
+global:
+  scrape_interval:     15s   # Fréquence de collecte des métriques
+  evaluation_interval: 15s   # Fréquence d'évaluation des règles d'alerte
+  scrape_timeout:      10s
+
+# Règles d'alerte (fichiers externes)
+rule_files:
+  - "rules/*.yml"
+
+# ─── Cibles à scraper ────────────────────────────────────────
+scrape_configs:
+
+  # Prometheus se monitore lui-même
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          service: 'prometheus'
+
+  # Backend Node.js — métriques applicatives
+  - job_name: 'portfolio-backend'
+    static_configs:
+      - targets: ['backend:5000']
+        labels:
+          service: 'backend'
+          environment: 'local'
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+
+  # MongoDB Exporter — métriques base de données
+  - job_name: 'mongodb'
+    static_configs:
+      - targets: ['mongodb-exporter:9216']
+        labels:
+          service: 'mongodb'
+
+  # cAdvisor — métriques Docker (CPU, mémoire, réseau des containers)
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+        labels:
+          service: 'docker'
+    scrape_interval: 10s
+
+  # Node Exporter — métriques système (CPU hôte, RAM, disque)
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          service: 'host'
