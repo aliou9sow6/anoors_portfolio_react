@@ -150,35 +150,30 @@ pipeline {
         stage('Terraform Plan') {
             when { expression { params.DEPLOY_TARGET == 'kubernetes' } }
             steps {
-                withCredentials([[
-                    $class: 'AmazonWebServicesCredentialsBinding',
-                    credentialsId: 'aws-credentials',
-                    accessKeyVariable: 'AWS_ACCESS_KEY_ID',
-                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
-                ],
-                [
-                    $class: 'StringBinding',
-                    credentialsId: 'mongo-password',
-                    variable: 'MONGO_PASSWORD'
-                ]]) {
+                withCredentials([
+                    [
+                        $class: 'AmazonWebServicesCredentialsBinding',
+                        credentialsId: 'aws-credentials',
+                        accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                        secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                    ],
+                    string(credentialsId: 'mongo-password', variable: 'MONGO_PASSWORD')
+                ]) {
                     sh '''
-                        # Générer le terraform.tfvars depuis le template + les credentials Jenkins
-                        # (le fichier .tfvars n'est pas dans le repo car il contient des secrets)
+                        # Copier le template et injecter les valeurs sensibles
                         cp $WORKSPACE/$TF_DIR/terraform.tfvars.example \
                            $WORKSPACE/$TF_DIR/terraform.tfvars
 
-                        # Remplacer le mot de passe MongoDB par la valeur du credential Jenkins
                         sed -i "s|mongo_root_password = .*|mongo_root_password = \\"$MONGO_PASSWORD\\"|" \
                           $WORKSPACE/$TF_DIR/terraform.tfvars
 
-                        # Mettre à jour les tags d'images avec le numéro de build
                         sed -i "s|backend_image_tag  = .*|backend_image_tag  = \\"v1.0.$BUILD_NUMBER\\"|" \
                           $WORKSPACE/$TF_DIR/terraform.tfvars
                         sed -i "s|frontend_image_tag = .*|frontend_image_tag = \\"v1.0.$BUILD_NUMBER\\"|" \
                           $WORKSPACE/$TF_DIR/terraform.tfvars
 
-                        echo "=== terraform.tfvars généré ==="
-                        grep -v password $WORKSPACE/$TF_DIR/terraform.tfvars
+                        echo "=== terraform.tfvars généré (secrets masqués) ==="
+                        grep -v "password\\|key" $WORKSPACE/$TF_DIR/terraform.tfvars || true
 
                         docker run --rm \
                           -e AWS_ACCESS_KEY_ID \
