@@ -162,13 +162,13 @@ pipeline {
                 ]) {
                     sh '''
                         # Diagnostic: list mounted workspace and check tfvars presence inside container
-                        docker run --rm \
-                          -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
-                          -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
-                          -v "$WORKSPACE/terraform/scenario1-free-tier:/workspace" \
-                          -w /workspace \
-                          hashicorp/terraform:1.15.6 \
-                          sh -c "ls -la /workspace || true; echo '---'; if [ -f /workspace/terraform.tfvars ]; then echo 'TFVARS=present'; else echo 'TFVARS=missing'; fi"
+                                                docker run --rm \
+                                                    -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+                                                    -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+                                                    -v "$WORKSPACE/terraform/scenario1-free-tier:/workspace" \
+                                                    -w /workspace \
+                                                    --entrypoint sh \
+                                                    hashicorp/terraform:1.15.6 -c "ls -la /workspace || true; echo '---'; if [ -f /workspace/terraform.tfvars ]; then echo 'TFVARS=present'; else echo 'TFVARS=missing'; fi"
 
                         # Actual plan
                         docker run --rm \
