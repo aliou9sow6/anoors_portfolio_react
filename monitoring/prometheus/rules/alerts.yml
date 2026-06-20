@@ -1,0 +1,94 @@
+###############################################################
+# alerts.yml — Règles d'alerte Prometheus
+###############################################################
+
+groups:
+
+  # ─── Alertes Backend ───────────────────────────────────────
+  - name: backend_alerts
+    rules:
+
+      # Backend inaccessible depuis plus de 1 minute
+      - alert: BackendDown
+        expr: up{job="portfolio-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Backend portfolio inaccessible"
+          description: "Le backend Node.js ne répond plus depuis 1 minute."
+
+      # Taux d'erreur HTTP > 5% sur 5 minutes
+      - alert: HighErrorRate
+        expr: |
+          rate(http_requests_total{status_code=~"5.."}[5m])
+          /
+          rate(http_requests_total[5m]) > 0.05
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Taux d'erreur HTTP élevé"
+          description: "Plus de 5% des requêtes retournent une erreur 5xx."
+
+      # Latence P95 > 2 secondes
+      - alert: HighLatency
+        expr: |
+          histogram_quantile(0.95,
+            rate(http_request_duration_seconds_bucket[5m])
+          ) > 2
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Latence API élevée"
+          description: "Le 95e percentile de latence dépasse 2 secondes."
+
+  # ─── Alertes MongoDB ───────────────────────────────────────
+  - name: mongodb_alerts
+    rules:
+
+      - alert: MongoDBDown
+        expr: up{job="mongodb"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "MongoDB inaccessible"
+          description: "MongoDB ne répond plus depuis 1 minute."
+
+      - alert: MongoDBDisconnected
+        expr: mongodb_connection_status == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Backend déconnecté de MongoDB"
+          description: "Le backend a perdu sa connexion MongoDB."
+
+  # ─── Alertes système ───────────────────────────────────────
+  - name: system_alerts
+    rules:
+
+      # CPU hôte > 80% pendant 5 minutes
+      - alert: HighCPU
+        expr: |
+          100 - (avg by(instance) (
+            rate(node_cpu_seconds_total{mode="idle"}[5m])
+          ) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "CPU élevé sur l'hôte"
+          description: "L'utilisation CPU dépasse 80% depuis 5 minutes."
+
+      # Mémoire disponible < 200 Mo
+      - alert: LowMemory
+        expr: node_memory_MemAvailable_bytes < 200 * 1024 * 1024
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Mémoire disponible faible"
+          description: "Moins de 200 Mo de RAM disponible."

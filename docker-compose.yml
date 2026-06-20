@@ -96,12 +96,111 @@ services:
     networks:
       - portfolio_network
 
+  # ─── Monitoring ──────────────────────────────────────────────
+
+  prometheus:
+    image: prom/prometheus:v2.51.2
+    container_name: portfolio_prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus/rules:/etc/prometheus/rules:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    networks:
+      - portfolio_network
+    depends_on:
+      - backend
+
+  grafana:
+    image: grafana/grafana:10.4.2
+    container_name: portfolio_grafana
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin123
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/backend-dashboard.json
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    networks:
+      - portfolio_network
+    depends_on:
+      - prometheus
+
+  # MongoDB Exporter — expose les métriques MongoDB pour Prometheus
+  mongodb-exporter:
+    image: percona/mongodb_exporter:0.40.0
+    container_name: portfolio_mongodb_exporter
+    restart: unless-stopped
+    environment:
+      MONGODB_URI: mongodb://admin:password123@mongodb:27017/admin?authSource=admin
+    ports:
+      - "9216:9216"
+    networks:
+      - portfolio_network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    command:
+      - '--mongodb.uri=mongodb://admin:password123@mongodb:27017/admin?authSource=admin'
+      - '--collect-all'
+      - '--compatible-mode'
+
+  # cAdvisor — métriques CPU/RAM/réseau de chaque container Docker
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: portfolio_cadvisor
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+    networks:
+      - portfolio_network
+    privileged: true
+
+  # Node Exporter — métriques système de l'hôte (CPU, RAM, disque)
+  node-exporter:
+    image: prom/node-exporter:v1.7.0
+    container_name: portfolio_node_exporter
+    restart: unless-stopped
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    networks:
+      - portfolio_network
+
 volumes:
   mongodb_data:
   sonarqube_data:
   sonarqube_extensions:
   sonarqube_db:
   jenkins_home:
+  prometheus_data:
+  grafana_data:
 
 networks:
   portfolio_network:
