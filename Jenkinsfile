@@ -110,7 +110,7 @@ pipeline {
             }
         }
 
-        stage('Terraform Init') {
+            stage('Terraform Init') {
             when {
                 expression { params.DEPLOY_TARGET == 'kubernetes' }
             }
@@ -119,24 +119,39 @@ pipeline {
                     aws(credentialsId: 'aws-credentials', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')
                 ]) {
                     sh '''
+                                                set -euo pipefail
+
+                                                echo '--- [Terraform Init] Debug ---'
+                                                echo "WORKSPACE=${WORKSPACE:-<unset>}"
+
                                                 VOL=$(docker volume ls --format '{{.Name}}' | grep -E '_jenkins_home$' | head -n1 || true)
                                                 if [ -z "$VOL" ]; then echo "ERROR: no jenkins volume found"; exit 1; fi
                                                 HOST_VOLUME=$(docker volume inspect "$VOL" --format '{{.Mountpoint}}')
+
+                                                echo "JENKINS_HOME_VOLUME_NAME=$VOL"
+                                                echo "HOST_VOLUME=$HOST_VOLUME"
+
+                                                # Keep previous derivation (useful for debugging), but do not rely on it for locating workspace
                                                 REL_PATH=${WORKSPACE#/var/jenkins_home}
                                                 JOB_DIR_NAME=$(basename "$REL_PATH")
-                                                if [ -d "$HOST_VOLUME/workspace/$JOB_DIR_NAME" ]; then
-                                                    HOST_WORKSPACE="$HOST_VOLUME/workspace/$JOB_DIR_NAME/terraform/scenario1-free-tier"
-                                                else
-                                                    MATCH=$(ls -1 "$HOST_VOLUME/workspace" 2>/dev/null | grep "^${JOB_DIR_NAME}" | sort -r | head -n1 || true)
-                                                    if [ -n "$MATCH" ] && [ -d "$HOST_VOLUME/workspace/$MATCH" ]; then
-                                                        HOST_WORKSPACE="$HOST_VOLUME/workspace/$MATCH/terraform/scenario1-free-tier"
-                                                    else
-                                                        echo "ERROR: could not locate workspace dir under $HOST_VOLUME/workspace for job prefix '$JOB_DIR_NAME'"
-                                                        exit 1
-                                                    fi
+                                                echo "REL_PATH=$REL_PATH"
+                                                echo "JOB_DIR_NAME=$JOB_DIR_NAME"
+
+                                                # Robust lookup: find any matching scenario directory under $HOST_VOLUME/workspace
+                                                TARGET_DIR="terraform/scenario1-free-tier"
+                                                CANDIDATE=$(find "$HOST_VOLUME/workspace" -maxdepth 4 -type d -path "*/$TARGET_DIR" 2>/dev/null | sort -r | head -n1 || true)
+
+                                                if [ -z "${CANDIDATE:-}" ] ; then
+                                                    echo "ERROR: could not locate '$TARGET_DIR' under $HOST_VOLUME/workspace"
+                                                    echo '--- ls $HOST_VOLUME/workspace (top 200) ---'
+                                                    ls -la "$HOST_VOLUME/workspace" 2>/dev/null | head -n 200 || true
+                                                    exit 1
                                                 fi
+
+                                                HOST_WORKSPACE="$CANDIDATE"
                                                 echo "HOST_WORKSPACE=$HOST_WORKSPACE"
                                                 ls -la "$(dirname "$HOST_WORKSPACE")" || true
+
                         docker run --rm \
                           -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
                           -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
@@ -149,6 +164,7 @@ pipeline {
             }
         }
 
+
         stage('Terraform Validate') {
             when {
                 expression { params.DEPLOY_TARGET == 'kubernetes' }
@@ -158,24 +174,22 @@ pipeline {
                     aws(credentialsId: 'aws-credentials', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')
                 ]) {
                     sh '''
+                                                set -euo pipefail
+
                                                 VOL=$(docker volume ls --format '{{.Name}}' | grep -E '_jenkins_home$' | head -n1 || true)
                                                 if [ -z "$VOL" ]; then echo "ERROR: no jenkins volume found"; exit 1; fi
                                                 HOST_VOLUME=$(docker volume inspect "$VOL" --format '{{.Mountpoint}}')
-                                                REL_PATH=${WORKSPACE#/var/jenkins_home}
-                                                JOB_DIR_NAME=$(basename "$REL_PATH")
-                                                if [ -d "$HOST_VOLUME/workspace/$JOB_DIR_NAME" ]; then
-                                                    HOST_WORKSPACE="$HOST_VOLUME/workspace/$JOB_DIR_NAME/terraform/scenario1-free-tier"
-                                                else
-                                                    MATCH=$(ls -1 "$HOST_VOLUME/workspace" 2>/dev/null | grep "^${JOB_DIR_NAME}" | sort -r | head -n1 || true)
-                                                    if [ -n "$MATCH" ] && [ -d "$HOST_VOLUME/workspace/$MATCH" ]; then
-                                                        HOST_WORKSPACE="$HOST_VOLUME/workspace/$MATCH/terraform/scenario1-free-tier"
-                                                    else
-                                                        echo "ERROR: could not locate workspace dir under $HOST_VOLUME/workspace for job prefix '$JOB_DIR_NAME'"
-                                                        exit 1
-                                                    fi
+
+                                                TARGET_DIR="terraform/scenario1-free-tier"
+                                                CANDIDATE=$(find "$HOST_VOLUME/workspace" -maxdepth 4 -type d -path "*/$TARGET_DIR" 2>/dev/null | sort -r | head -n1 || true)
+
+                                                if [ -z "${CANDIDATE:-}" ] ; then
+                                                    echo "ERROR: could not locate '$TARGET_DIR' under $HOST_VOLUME/workspace"
+                                                    exit 1
                                                 fi
-                                                echo "HOST_WORKSPACE=$HOST_WORKSPACE"
-                                                ls -la "$(dirname "$HOST_WORKSPACE")" || true
+
+                                                HOST_WORKSPACE="$CANDIDATE"
+
                         docker run --rm \
                           -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
                           -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
@@ -188,6 +202,7 @@ pipeline {
             }
         }
 
+
         stage('Terraform Plan') {
             when {
                 expression { params.DEPLOY_TARGET == 'kubernetes' }
@@ -197,26 +212,25 @@ pipeline {
                     aws(credentialsId: 'aws-credentials', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')
                 ]) {
                     sh '''
+                                                set -euo pipefail
+
                                                 VOL=$(docker volume ls --format '{{.Name}}' | grep -E '_jenkins_home$' | head -n1 || true)
                                                 if [ -z "$VOL" ]; then echo "ERROR: no jenkins volume found"; exit 1; fi
                                                 HOST_VOLUME=$(docker volume inspect "$VOL" --format '{{.Mountpoint}}')
-                                                REL_PATH=${WORKSPACE#/var/jenkins_home}
-                                                JOB_DIR_NAME=$(basename "$REL_PATH")
-                                                if [ -d "$HOST_VOLUME/workspace/$JOB_DIR_NAME" ]; then
-                                                    HOST_WORKSPACE="$HOST_VOLUME/workspace/$JOB_DIR_NAME/terraform/scenario1-free-tier"
-                                                else
-                                                    MATCH=$(ls -1 "$HOST_VOLUME/workspace" 2>/dev/null | grep "^${JOB_DIR_NAME}" | sort -r | head -n1 || true)
-                                                    if [ -n "$MATCH" ] && [ -d "$HOST_VOLUME/workspace/$MATCH" ]; then
-                                                        HOST_WORKSPACE="$HOST_VOLUME/workspace/$MATCH/terraform/scenario1-free-tier"
-                                                    else
-                                                        echo "ERROR: could not locate workspace dir under $HOST_VOLUME/workspace for job prefix '$JOB_DIR_NAME'"
-                                                        exit 1
-                                                    fi
+
+                                                TARGET_DIR="terraform/scenario1-free-tier"
+                                                CANDIDATE=$(find "$HOST_VOLUME/workspace" -maxdepth 4 -type d -path "*/$TARGET_DIR" 2>/dev/null | sort -r | head -n1 || true)
+
+                                                if [ -z "${CANDIDATE:-}" ] ; then
+                                                    echo "ERROR: could not locate '$TARGET_DIR' under $HOST_VOLUME/workspace"
+                                                    exit 1
                                                 fi
+
+                                                HOST_WORKSPACE="$CANDIDATE"
+
+                                                echo '--- [Terraform Plan] Debug ---'
                                                 echo "HOST_WORKSPACE=$HOST_WORKSPACE"
-                                                ls -la "$(dirname "$HOST_WORKSPACE")" || true
-                        echo '---'
-                        if [ -f "$HOST_WORKSPACE/terraform.tfvars" ]; then echo 'TFVARS=present'; else echo 'TFVARS=missing'; fi
+                                                if [ -f "$HOST_WORKSPACE/terraform.tfvars" ]; then echo 'TFVARS=present'; else echo 'TFVARS=missing'; fi
 
                         docker run --rm \
                           -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
@@ -230,6 +244,7 @@ pipeline {
             }
         }
 
+
         stage('Terraform Apply') {
             when {
                 expression { params.DEPLOY_TARGET == 'kubernetes' }
@@ -240,24 +255,22 @@ pipeline {
                     aws(credentialsId: 'aws-credentials', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')
                 ]) {
                     sh '''
+                                                set -euo pipefail
+
                                                 VOL=$(docker volume ls --format '{{.Name}}' | grep -E '_jenkins_home$' | head -n1 || true)
                                                 if [ -z "$VOL" ]; then echo "ERROR: no jenkins volume found"; exit 1; fi
                                                 HOST_VOLUME=$(docker volume inspect "$VOL" --format '{{.Mountpoint}}')
-                                                REL_PATH=${WORKSPACE#/var/jenkins_home}
-                                                JOB_DIR_NAME=$(basename "$REL_PATH")
-                                                if [ -d "$HOST_VOLUME/workspace/$JOB_DIR_NAME" ]; then
-                                                    HOST_WORKSPACE="$HOST_VOLUME/workspace/$JOB_DIR_NAME/terraform/scenario1-free-tier"
-                                                else
-                                                    MATCH=$(ls -1 "$HOST_VOLUME/workspace" 2>/dev/null | grep "^${JOB_DIR_NAME}" | sort -r | head -n1 || true)
-                                                    if [ -n "$MATCH" ] && [ -d "$HOST_VOLUME/workspace/$MATCH" ]; then
-                                                        HOST_WORKSPACE="$HOST_VOLUME/workspace/$MATCH/terraform/scenario1-free-tier"
-                                                    else
-                                                        echo "ERROR: could not locate workspace dir under $HOST_VOLUME/workspace for job prefix '$JOB_DIR_NAME'"
-                                                        exit 1
-                                                    fi
+
+                                                TARGET_DIR="terraform/scenario1-free-tier"
+                                                CANDIDATE=$(find "$HOST_VOLUME/workspace" -maxdepth 4 -type d -path "*/$TARGET_DIR" 2>/dev/null | sort -r | head -n1 || true)
+
+                                                if [ -z "${CANDIDATE:-}" ] ; then
+                                                    echo "ERROR: could not locate '$TARGET_DIR' under $HOST_VOLUME/workspace"
+                                                    exit 1
                                                 fi
-                                                echo "HOST_WORKSPACE=$HOST_WORKSPACE"
-                                                ls -la "$(dirname "$HOST_WORKSPACE")" || true
+
+                                                HOST_WORKSPACE="$CANDIDATE"
+
                         docker run --rm \
                           -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
                           -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
@@ -269,6 +282,7 @@ pipeline {
                 }
             }
         }
+
 
         stage('Deploy to Kubernetes') {
             when {
