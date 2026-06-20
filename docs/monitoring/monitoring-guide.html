@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Monitoring — Prometheus + Grafana</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Segoe UI',Arial,sans-serif;font-size:13px;line-height:1.7;color:#1a1a2e;background:#fff}
+  /* COVER */
+  .cover{page-break-after:always;min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);color:#fff;text-align:center;padding:60px 40px}
+  .cover .icon{font-size:72px;margin-bottom:24px}
+  .cover h1{font-size:38px;font-weight:700;margin-bottom:12px;letter-spacing:-0.5px}
+  .cover .sub{font-size:18px;color:#90cdf4;margin-bottom:8px}
+  .cover .sub2{font-size:14px;color:#90e0ef;margin-bottom:40px}
+  .cover .pills{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-bottom:50px}
+  .cover .pill{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.25);padding:6px 16px;border-radius:20px;font-size:12px}
+  .cover .meta{font-size:12px;color:#94a3b8;border-top:1px solid rgba(255,255,255,0.15);padding-top:28px;margin-top:28px;line-height:2}
+  /* TOC */
+  .toc{page-break-after:always;padding:60px 80px}
+  .toc h2{font-size:26px;color:#0f2027;margin-bottom:30px;padding-bottom:12px;border-bottom:3px solid #00b4d8}
+  .toc-item{display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;border-bottom:1px dotted #e2e8f0}
+  .toc-num{color:#00b4d8;font-weight:700;min-width:28px;font-size:14px}
+  .toc-title{font-size:14px;font-weight:600;color:#1a1a2e}
+  .toc-sub{font-size:12px;color:#64748b;padding-left:28px;padding-top:3px}
+  /* CHAPTERS */
+  .chapter{padding:50px 80px;page-break-before:always}
+  .chapter-header{background:linear-gradient(135deg,#0f2027,#2c5364);color:#fff;margin:-50px -80px 40px -80px;padding:38px 80px}
+  .chapter-header .num{font-size:12px;color:#90cdf4;text-transform:uppercase;letter-spacing:2px;margin-bottom:6px}
+  .chapter-header h2{font-size:28px;font-weight:700}
+  h3{font-size:17px;color:#0f2027;margin:32px 0 12px;padding-left:14px;border-left:4px solid #00b4d8}
+  h4{font-size:13px;color:#1a1a2e;margin:20px 0 8px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#0f2027}
+  p{margin-bottom:12px;color:#374151}
+  ul,ol{padding-left:24px;margin-bottom:12px}
+  li{margin-bottom:5px;color:#374151}
+  code{font-family:'Consolas','Courier New',monospace;font-size:12px;background:#f1f5f9;color:#e94560;padding:2px 6px;border-radius:4px}
+  pre{background:#0d1117;color:#e2e8f0;padding:20px 24px;border-radius:8px;margin:16px 0;font-family:'Consolas',monospace;font-size:11.5px;line-height:1.65;border-left:4px solid #00b4d8;overflow-x:auto}
+  pre code{background:none;color:inherit;padding:0}
+  .schema{background:#0d1117;color:#7dd3fc;font-family:'Consolas',monospace;font-size:11.5px;padding:20px 24px;border-radius:8px;margin:16px 0;line-height:1.9}
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:12px}
+  th{background:#0f2027;color:#fff;padding:10px 14px;text-align:left;font-weight:600}
+  td{padding:9px 14px;border-bottom:1px solid #e2e8f0;color:#374151}
+  tr:nth-child(even) td{background:#f8fafc}
+  .info{background:#eff6ff;border-left:4px solid #3b82f6;padding:14px 18px;margin:16px 0;border-radius:0 8px 8px 0}
+  .warn{background:#fffbeb;border-left:4px solid #f59e0b;padding:14px 18px;margin:16px 0;border-radius:0 8px 8px 0}
+  .ok{background:#f0fdf4;border-left:4px solid #22c55e;padding:14px 18px;margin:16px 0;border-radius:0 8px 8px 0}
+  .err{background:#fef2f2;border-left:4px solid #ef4444;padding:14px 18px;margin:16px 0;border-radius:0 8px 8px 0}
+  .box-t{font-weight:700;font-size:13px;margin-bottom:6px}
+  .info .box-t{color:#1d4ed8}.warn .box-t{color:#d97706}.ok .box-t{color:#15803d}.err .box-t{color:#dc2626}
+  .badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;margin:2px}
+  .badge-up{background:#dcfce7;color:#15803d}
+  .badge-down{background:#fef2f2;color:#dc2626}
+  .badge-warn{background:#fef9c3;color:#854d0e}
+  .badge-crit{background:#fef2f2;color:#dc2626}
+  .final{page-break-before:always;text-align:center;padding:80px 40px}
+  @media print{
+    body{font-size:12px}
+    .cover,.chapter-header{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    pre,.schema{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    th{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .info,.warn,.ok,.err{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    h3{page-break-after:avoid}
+    pre,table{page-break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="icon">📈</div>
+  <h1>Monitoring Stack</h1>
+  <div class="sub">Prometheus + Grafana</div>
+  <div class="sub2">Guide complet d'installation, d'utilisation et d'exploitation</div>
+  <div class="pills">
+    <span class="pill">🔥 Prometheus v2.51.2</span>
+    <span class="pill">📊 Grafana v10.4.2</span>
+    <span class="pill">🐳 cAdvisor v0.49.1</span>
+    <span class="pill">🍃 MongoDB Exporter v0.40</span>
+    <span class="pill">🖥️ Node Exporter v1.7.0</span>
+    <span class="pill">⚡ prom-client v15.1.3</span>
+  </div>
+  <div class="meta">
+    <strong>Projet</strong> : anoors_portfolio_react &nbsp;·&nbsp;
+    <strong>Branche</strong> : release/v1.0.0-cicd-infra<br>
+    <strong>Auteur</strong> : Aliou Sow &nbsp;·&nbsp;
+    <strong>Date</strong> : Juin 2026
+  </div>
+</div>
+
+<!-- TOC -->
+<div class="toc">
+  <h2>Table des matières</h2>
+  <div class="toc-item"><span><span class="toc-num">1</span><span class="toc-title">Vue d'ensemble</span></span></div>
+  <div class="toc-sub">Pourquoi monitorer · Les 3 couches d'observabilité · Qu'est-ce qu'une métrique</div>
+  <div class="toc-item"><span><span class="toc-num">2</span><span class="toc-title">Architecture complète</span></span></div>
+  <div class="toc-sub">Schéma du flux de données · Fonctionnement du scrape · Pull vs Push</div>
+  <div class="toc-item"><span><span class="toc-num">3</span><span class="toc-title">Composants du stack</span></span></div>
+  <div class="toc-sub">Prometheus · Grafana · cAdvisor · MongoDB Exporter · Node Exporter · prom-client</div>
+  <div class="toc-item"><span><span class="toc-num">4</span><span class="toc-title">Installation et démarrage</span></span></div>
+  <div class="toc-sub">Prérequis · Démarrage · Vérification · État attendu</div>
+  <div class="toc-item"><span><span class="toc-num">5</span><span class="toc-title">Métriques exposées</span></span></div>
+  <div class="toc-sub">Backend Node.js · Types de métriques · cAdvisor · Node Exporter · MongoDB</div>
+  <div class="toc-item"><span><span class="toc-num">6</span><span class="toc-title">Prometheus — Guide d'utilisation</span></span></div>
+  <div class="toc-sub">Interface web · Targets · PromQL · Requêtes essentielles</div>
+  <div class="toc-item"><span><span class="toc-num">7</span><span class="toc-title">Grafana — Guide d'utilisation</span></span></div>
+  <div class="toc-sub">Navigation · Dashboards · Contrôles temporels · Personnalisation</div>
+  <div class="toc-item"><span><span class="toc-num">8</span><span class="toc-title">Dashboards en détail</span></span></div>
+  <div class="toc-sub">Backend Node.js · Infrastructure Docker · Interprétation des valeurs</div>
+  <div class="toc-item"><span><span class="toc-num">9</span><span class="toc-title">Alertes</span></span></div>
+  <div class="toc-sub">7 règles détaillées · États · Tests manuels</div>
+  <div class="toc-item"><span><span class="toc-num">10</span><span class="toc-title">Résolution de problèmes</span></span></div>
+  <div class="toc-sub">No data · Target DOWN · Erreurs courantes</div>
+  <div class="toc-item"><span><span class="toc-num">11</span><span class="toc-title">Référence rapide</span></span></div>
+  <div class="toc-sub">URLs · Commandes · Structure des fichiers</div>
+</div>
+
+<!-- CH1 -->
+<div class="chapter">
+  <div class="chapter-header"><div class="num">Chapitre 1</div><h2>Vue d'ensemble</h2></div>
+
+  <h3>Pourquoi monitorer ?</h3>
+  <p>Sans monitoring, tu découvres les pannes quand les utilisateurs se plaignent. Avec ce stack, tu sais <strong>en temps réel</strong> ce qui se passe dans ton application.</p>
+  <table>
+    <tr><th>Sans monitoring</th><th>Avec ce stack</th></tr>
+    <tr><td>Panne découverte par les utilisateurs</td><td>Alerte automatique après 1 minute</td></tr>
+    <tr><td>Impossible de savoir si l'app est lente</td><td>Latence P95 visible en permanence</td></tr>
+    <tr><td>Mémoire qui fuit sans le savoir</td><td>Graphique heap Node.js en temps réel</td></tr>
+    <tr><td>MongoDB déconnecté = app silencieusement cassée</td><td>Jauge CONNECTÉ / DÉCONNECTÉ</td></tr>
+    <tr><td>CPU à 100% détecté trop tard</td><td>Alerte dès 80% pendant 5 minutes</td></tr>
+  </table>
+
+  <h3>Les 3 couches d'observabilité</h3>
+  <div class="schema">┌──────────────────────────────────────────────────┐
+│  MÉTRIQUES  (Prometheus + Grafana)               │  ← Ce guide
+│  "Que se passe-t-il en chiffres ?"               │
+│  → req/s, latence, CPU, RAM, erreurs...          │
+├──────────────────────────────────────────────────┤
+│  LOGS  (docker-compose logs)                     │
+│  "Que s'est-il passé exactement ?"               │
+│  → Texte horodaté : erreurs, stack traces        │
+├──────────────────────────────────────────────────┤
+│  TRACES  (non implémenté)                        │
+│  "Quel chemin a suivi cette requête ?"           │
+│  → Latence par étape : API → MongoDB → réponse  │
+└──────────────────────────────────────────────────┘</div>
+
+  <h3>Qu'est-ce qu'une métrique ?</h3>
+  <p>Une métrique est une <strong>mesure numérique horodatée</strong>. Par exemple :</p>
+  <pre><code># À 20h50:15, le backend a reçu 42 requêtes GET /api/projets avec status 200
+http_requests_total{method="GET",route="/api/projets",status_code="200"} 42
+
+# À 20h50:15, la mémoire heap utilisée est 19.2 Mo
+nodejs_heap_size_used_bytes 20132864</code></pre>
+
+  <p>Prometheus collecte ces valeurs toutes les 15 secondes et les stocke dans une base de données temporelle. Grafana les lit et les affiche sous forme de graphiques.</p>
+
+  <h3>Les 4 types de métriques Prometheus</h3>
+  <table>
+    <tr><th>Type</th><th>Analogie</th><th>Exemple dans ce projet</th></tr>
+    <tr><td><strong>Counter</strong></td><td>Compteur kilométrique — ne fait que monter</td><td>Nombre total de requêtes HTTP reçues</td></tr>
+    <tr><td><strong>Gauge</strong></td><td>Thermomètre — monte et descend</td><td>Mémoire heap utilisée, statut MongoDB</td></tr>
+    <tr><td><strong>Histogram</strong></td><td>Distribution en tranches</td><td>Durée des requêtes (buckets 10ms, 100ms...)</td></tr>
+    <tr><td><strong>Summary</strong></td><td>Percentiles pré-calculés</td><td>Non utilisé directement ici</td></tr>
+  </table>
+</div>
+
+<!-- CH2 -->
+<div class="chapter">
+  <div class="chapter-header"><div class="num">Chapitre 2</div><h2>Architecture complète</h2></div>
+
+  <h3>Schéma du flux de données</h3>
+  <div class="schema">┌─────────────────────────────────────────────────────────────────┐
+│                     SOURCES DE DONNÉES                           │
+│                                                                   │
+│  ┌──────────────────┐  ┌──────────────┐  ┌───────────────────┐  │
+│  │ Backend Node.js  │  │   cAdvisor   │  │  Node Exporter    │  │
+│  │  :5000/metrics   │  │ :8080/metrics│  │  :9100/metrics    │  │
+│  │  (prom-client)   │  │  (Docker)    │  │  (Système hôte)   │  │
+│  └────────┬─────────┘  └──────┬───────┘  └────────┬──────────┘  │
+│           │                   │                    │             │
+│  ┌────────┴───────────────────┴────────────────────┴──────────┐ │
+│  │           MongoDB Exporter :9216/metrics                    │ │
+│  └──────────────────────────────────────────────────────────┬─┘ │
+└─────────────────────────────────────────────────────────────│───┘
+                                                              │
+                    SCRAPE toutes les 15s (pull)              │
+                                                              ▼
+                ┌─────────────────────────────────────────────┐
+                │             PROMETHEUS :9090                 │
+                │  Collecte → Stocke (15 jours) → Évalue      │
+                │  les règles d'alerte toutes les 15s          │
+                └──────────────────┬──────────────────────────┘
+                                   │
+                          Query (PromQL)
+                                   │
+                                   ▼
+                ┌─────────────────────────────────────────────┐
+                │              GRAFANA :3001                   │
+                │  Dashboards · Visualisation · Alertes UI    │
+                └─────────────────────────────────────────────┘</div>
+
+  <h3>Fonctionnement du scrape (Pull model)</h3>
+  <p>Prometheus fonctionne en <strong>mode pull</strong> : c'est lui qui va chercher les métriques chez les cibles à intervalles réguliers, pas les cibles qui lui envoient des données. C'est l'inverse de la plupart des systèmes de logs.</p>
+
+  <div class="info"><div class="box-t">ℹ️ Pourquoi le mode Pull ?</div>
+  Si une cible tombe en panne et arrête d'envoyer des données (mode push), Prometheus ne le saurait pas. En mode pull, si Prometheus ne reçoit pas de réponse → la cible est marquée <strong>DOWN</strong> → alerte déclenchée.</div>
+
+  <h3>Configuration des intervalles</h3>
+  <table>
+    <tr><th>Cible</th><th>Intervalle</th><th>Raison</th></tr>
+    <tr><td>portfolio-backend</td><td>10 secondes</td><td>Métriques applicatives — précision importante</td></tr>
+    <tr><td>cAdvisor</td><td>10 secondes</td><td>Métriques Docker — changent rapidement</td></tr>
+    <tr><td>MongoDB Exporter</td><td>15 secondes (défaut)</td><td>Métriques DB — évolution plus lente</td></tr>
+    <tr><td>Node Exporter</td><td>15 secondes (défaut)</td><td>Métriques système — évolution lente</td></tr>
+    <tr><td>Prometheus lui-même</td><td>15 secondes (défaut)</td><td>Auto-monitoring</td></tr>
+  </table>
+</div>
+
+<!-- CH3 -->
+<div class="chapter">
+  <div class="chapter-header"><div class="num">Chapitre 3</div><h2>Composants du stack</h2></div>
+
+  <h3>Prometheus <code>prom/prometheus:v2.51.2</code></h3>
+  <p>Base de données de séries temporelles spécialisée pour les métriques. Stocke les données pendant 15 jours, évalue les règles d'alerte, expose une API pour Grafana.</p>
+  <table>
+    <tr><th>Fichier</th><th>Rôle</th></tr>
+    <tr><td><code>monitoring/prometheus/prometheus.yml</code></td><td>Configuration principale : cibles, intervalles, fichiers de règles</td></tr>
+    <tr><td><code>monitoring/prometheus/rules/alerts.yml</code></td><td>7 règles d'alerte avec conditions et sévérités</td></tr>
+  </table>
+
+  <h3>Grafana <code>grafana/grafana:10.4.2</code></h3>
+  <p>Interface de visualisation. Se connecte à Prometheus comme datasource et affiche les données en dashboards. Entièrement provisionnée en code — aucun clic nécessaire au démarrage.</p>
+  <table>
+    <tr><th>Fichier</th><th>Rôle</th></tr>
+    <tr><td><code>monitoring/grafana/provisioning/datasources/prometheus.yml</code></td><td>Datasource Prometheus auto-configurée au démarrage</td></tr>
+    <tr><td><code>monitoring/grafana/provisioning/dashboards/dashboard.yml</code></td><td>Provider : surveille le dossier dashboards/</td></tr>
+    <tr><td><code>monitoring/grafana/dashboards/backend-dashboard.json</code></td><td>Dashboard applicatif Node.js</td></tr>
+    <tr><td><code>monitoring/grafana/dashboards/system-dashboard.json</code></td><td>Dashboard infrastructure Docker + hôte</td></tr>
+  </table>
+
+  <h3>cAdvisor <code>gcr.io/cadvisor/cadvisor:v0.49.1</code></h3>
+  <p>Container Advisor by Google. S'exécute avec accès privilégié aux cgroups Linux pour collecter les métriques de chaque container Docker : CPU, mémoire, réseau, disque.</p>
+  <div class="warn"><div class="box-t">⚠️ Accès privilégié</div>cAdvisor nécessite <code>privileged: true</code> et des montages en lecture seule sur <code>/proc</code>, <code>/sys</code>, <code>/var/lib/docker</code>. C'est normal et requis pour lire les métriques kernel.</div>
+
+  <h3>MongoDB Exporter <code>percona/mongodb_exporter:0.40.0</code></h3>
+  <p>Traduit les statistiques internes de MongoDB (via <code>db.serverStatus()</code>) en métriques Prometheus : connexions actives, opérations par type, taille des collections, état de réplication.</p>
+
+  <h3>Node Exporter <code>prom/node-exporter:v1.7.0</code></h3>
+  <p>Collecte les métriques du système d'exploitation hôte : utilisation CPU par cœur, mémoire RAM/swap, espace disque, trafic réseau, charge système.</p>
+
+  <h3>prom-client <code>v15.1.3</code></h3>
+  <p>Bibliothèque Node.js officielle pour exposer des métriques Prometheus. Installée dans le backend Express, elle fournit :</p>
+  <ul>
+    <li><strong>Métriques automatiques</strong> : heap, CPU, event loop, handles actifs</li>
+    <li><strong>API pour créer des métriques custom</strong> : Counter, Gauge, Histogram, Summary</li>
+    <li><strong>Registry</strong> : collection de toutes les métriques, exposée sur <code>/metrics</code></li>
+  </ul>
+</div>
+
+<!-- CH4 -->
+<div class="chapter">
+  <div class="chapter-header"><div class="num">Chapitre 4</div><h2>Installation et démarrage</h2></div>
+
+  <h3>Prérequis</h3>
+  <ul>
+    <li>Docker Desktop installé et démarré</li>
+    <li>Le projet cloné sur <code>release/v1.0.0-cicd-infra</code></li>
+    <li>Aucune autre application utilisant les ports 3001, 9090, 9100, 9216, 8081</li>
+  </ul>
+
+  <h3>Démarrage du stack complet</h3>
+  <pre><code># 1. Se placer dans le projet
+cd C:\anoors\codes\anoors_portfolio_react
+
+# 2. Rebuilder le backend (prom-client doit être dans l'image)
+docker-compose build backend
+
+# 3. Démarrer tous les services
+docker-compose up -d
+
+# 4. Vérifier l'état de chaque container
+docker-compose ps</code></pre>
+
+  <h3>État attendu après démarrage</h3>
+  <pre><code>NAME                        STATUS     PORTS
+portfolio_backend           running    0.0.0.0:5001->5000/tcp
+portfolio_frontend          running    0.0.0.0:3000->80/tcp
+portfolio_mongodb           running    0.0.0.0:27017->27017/tcp
+portfolio_prometheus        running    0.0.0.0:9090->9090/tcp
+portfolio_grafana           running    0.0.0.0:3001->3000/tcp
+portfolio_cadvisor          running    0.0.0.0:8081->8080/tcp
+portfolio_mongodb_exporter  running    0.0.0.0:9216->9216/tcp
+portfolio_node_exporter     running    0.0.0.0:9100->9100/tcp
+portfolio_jenkins           running    0.0.0.0:8080->8080/tcp
+portfolio_sonarqube         running    0.0.0.0:9000->9000/tcp</code></pre>
+
+  <h3>Vérification en 3 étapes</h3>
+  <p><strong>Étape 1 — Le backend expose bien les métriques</strong></p>
+  <p>Ouvrir <code>http://localhost:5001/metrics</code> → doit afficher du texte Prometheus</p>
+  <pre><code># HELP process_cpu_user_seconds_total Total user CPU time spent in seconds.
+# TYPE process_cpu_user_seconds_total counter
+process_cpu_user_seconds_total 0.125
+nodejs_heap_size_used_bytes 19456000
+http_requests_total{method="GET",route="/metrics",status_code="200"} 5</code></pre>
+
+  <p><strong>Étape 2 — Prometheus voit toutes les cibles</strong></p>
+  <p>Ouvrir <code>http://localhost:9090/targets</code> → toutes les cibles doivent être <span class="badge badge-up">UP</span></p>
+
+  <p><strong>Étape 3 — Grafana affiche les dashboards</strong></p>
+  <p>Ouvrir <code>http://localhost:3001</code> (admin / admin123) → dashboards visibles dans le dossier Portfolio</p>
+
+  <div class="ok"><div class="box-t">✅ Si tout est vert</div>Le monitoring est opérationnel. Les panels Grafana s'alimentent toutes les 30 secondes.</div>
+
+  <h3>Commandes de gestion quotidienne</h3>
+  <pre><code># Redémarrer uniquement le monitoring
+docker-compose restart prometheus grafana
+
+# Voir les logs de Prometheus en temps réel
+docker-compose logs -f prometheus
+
+# Voir les logs de Grafana
+docker-compose logs -f grafana
+
+# Recharger la config Prometheus sans redémarrer
+curl -X POST http://localhost:9090/-/reload
+
+# Arrêter tout sans perdre les données
+docker-compose stop
+
+# Tout supprimer incluant les volumes (réinitialisation complète)
+docker-compose down -v</code></pre>
+</div>
+
+<!-- CH5 -->
+<div class="chapter">
+  <div class="chapter-header"><div class="num">Chapitre 5</div><h2>Métriques exposées</h2></div>
+
+  <h3>Backend Node.js — Métriques custom</h3>
+  <p>Définies dans <code>backend/server.js</code> via <code>prom-client</code>.</p>
+
+  <h4>http_requests_total (Counter)</h4>
+  <p>Compte chaque requête HTTP reçue depuis le démarrage du serveur.</p>
+  <table>
+    <tr><th>Label</th><th>Valeurs possibles</th><th>Description</th></tr>
+    <tr><td><code>method</code></td><td>GET, POST, PUT, DELETE</td><td>Méthode HTTP de la requête</td></tr>
+    <tr><td><code>route</code></td><td>/api/projets, /metrics, /api/test</td><td>Chemin de l'URL</td></tr>
+    <tr><td><code>status_code</code></td><td>200, 201, 404, 500...</td><td>Code de réponse HTTP</td></tr>
+  </table>
+  <pre><code># Exemple de valeur brute
+http_requests_total{method="GET",route="/api/projets",status_code="200"} 42
+
+# PromQL : taux de requêtes par seconde
+rate(http_requests_total[1m])
+
+# PromQL : uniquement les erreurs
+rate(http_requests_total{status_code=~"5.."}[5m])</code></pre>
+
+  <h4>http_request_duration_seconds (Histogram)</h4>
+  <p>Mesure la durée de chaque requête et la répartit dans des buckets temporels.</p>
+  <table>
+    <tr><th>Bucket <code>le=</code></th><th>Requêtes répondant en moins de...</th></tr>
+    <tr><td>0.01</td><td>10 millisecondes</td></tr>
+    <tr><td>0.05</td><td>50 millisecondes</td></tr>
+    <tr><td>0.1</td><td>100 millisecondes</td></tr>
+    <tr><td>0.3</td><td>300 millisecondes</td></tr>
+    <tr><td>0.5</td><td>500 millisecondes</td></tr>
+    <tr><td>1</td><td>1 seconde</td></tr>
+    <tr><td>2</td><td>2 secondes</td></tr>
+    <tr><td>5</td><td>5 secondes</td></tr>
+  </table>
+  <pre><code># PromQL : latence P95 (95% des requêtes sous ce seuil)
+histogram_quantile(0.95,
+  sum(rate(http_request_duration_seconds_bucket[5m])) by (le))
+
+# PromQL : latence moyenne
+rate(http_request_duration_seconds_sum[5m])
+/ rate(http_request_duration_seconds_count[5m])</code></pre>
+
+  <h4>mongodb_connection_status (Gauge)</h4>
+  <table>
+    <tr><th>Valeur</th><th>Signification</th><th>Impact</th></tr>
+    <tr><td><code>1</code></td><td>Connecté</td><td>L'application fonctionne normalement</td></tr>
+    <tr><td><code>0</code></td><td>Déconnecté</td><td>Aucune lecture/écriture possible en base</td></tr>
+  </table>
+
+  <h3>Métriques Node.js automatiques</h3>
+  <p>Collectées automatiquement par <code>promClient.collectDefaultMetrics()</code>.</p>
+  <table>
+    <tr><th>Métrique</th><th>Description</th><th>Valeur normale</th></tr>
+    <tr><td><code>nodejs_heap_size_used_bytes</code></td><td>Mémoire heap utilisée</td><td>15-50 Mo en dev</td></tr>
+    <tr><td><code>nodejs_heap_size_total_bytes</code></td><td>Mémoire heap allouée</td><td>20-60 Mo en dev</td></tr>
+    <tr><td><code>nodejs_eventloop_lag_seconds</code></td><td>Délai event loop</td><td>< 10ms</td></tr>
+    <tr><td><code>nodejs_active_handles_total</code></td><td>Sockets + timers actifs</td><td>2-10</td></tr>
+    <tr><td><code>process_cpu_user_seconds_total</code></td><td>CPU consommé</td><td>Cumulatif</td></tr>
+    <tr><td><code>process_resident_memory_bytes</code></td><td>RAM résidente totale</td><td>50-150 Mo</td></tr>
+  </table>
+
+  <h3>Métriques cAdvisor (Docker)</h3>
+  <pre><code># CPU par container (%)
+sum by(name) (rate(container_cpu_usage_seconds_total{name!=""}[1m])) * 100
+
+# RAM par container (Mo)
+container_memory_usage_bytes{name!=""} / 1024 / 1024
+
+# Trafic réseau entrant (octets/s)
+rate(container_network_receive_bytes_total{name!=""}[1m])
+
+# Trafic réseau sortant (octets/s)
+rate(container_network_transmit_bytes_total{name!=""}[1m])</code></pre>
+
+  <h3>Métriques Node Exporter (Système hôte)</h3>
+  <pre><code># CPU utilisé (%) — toutes les cibles
+100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
+
+# RAM disponible (Go)
+node_memory_MemAvailable_bytes / 1024 / 1024 / 1024
+
+# Espace disque disponible
+node_filesystem_avail_bytes{fstype!="tmpfs"}
+
+# Trafic réseau hôte entrant (octets/s)
+rate(node_network_receive_bytes_total[1m])</code></pre>
+</div>
