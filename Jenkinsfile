@@ -110,11 +110,10 @@ pipeline {
             }
         }
 
-        stage('Validate Terraform Plan') {
+        stage('Terraform Init') {
             when {
-                expression { params.DEPLOY_TARGET == 'docker-compose' }
+                expression { params.DEPLOY_TARGET == 'kubernetes' }
             }
-
             steps {
                 withCredentials([
                     aws(credentialsId: 'aws-credentials', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')
@@ -128,7 +127,43 @@ pipeline {
                             -w /workspace \
                             hashicorp/terraform:1.15.6 \
                             terraform init -backend=false
+                    '''
+                }
+            }
+        }
 
+        stage('Terraform Validate') {
+            when {
+                expression { params.DEPLOY_TARGET == 'kubernetes' }
+            }
+            steps {
+                withCredentials([
+                    aws(credentialsId: 'aws-credentials', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')
+                ]) {
+                    sh '''
+                        cd terraform/scenario1-free-tier
+                        docker run --rm \
+                            -e AWS_ACCESS_KEY_ID \
+                            -e AWS_SECRET_ACCESS_KEY \
+                            -v "$PWD:/workspace" \
+                            -w /workspace \
+                            hashicorp/terraform:1.15.6 \
+                            terraform validate
+                    '''
+                }
+            }
+        }
+
+        stage('Terraform Plan') {
+            when {
+                expression { params.DEPLOY_TARGET == 'kubernetes' }
+            }
+            steps {
+                withCredentials([
+                    aws(credentialsId: 'aws-credentials', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')
+                ]) {
+                    sh '''
+                        cd terraform/scenario1-free-tier
                         docker run --rm \
                             -e AWS_ACCESS_KEY_ID \
                             -e AWS_SECRET_ACCESS_KEY \
@@ -136,8 +171,29 @@ pipeline {
                             -w /workspace \
                             hashicorp/terraform:1.15.6 \
                             terraform plan -var-file="terraform.tfvars" -out=tfplan.txt
+                    '''
+                }
+            }
+        }
 
-                        echo "✓ Terraform plan validated successfully"
+        stage('Terraform Apply') {
+            when {
+                expression { params.DEPLOY_TARGET == 'kubernetes' }
+            }
+            steps {
+                input message: 'Approve Terraform apply?', ok: 'Apply'
+                withCredentials([
+                    aws(credentialsId: 'aws-credentials', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')
+                ]) {
+                    sh '''
+                        cd terraform/scenario1-free-tier
+                        docker run --rm \
+                            -e AWS_ACCESS_KEY_ID \
+                            -e AWS_SECRET_ACCESS_KEY \
+                            -v "$PWD:/workspace" \
+                            -w /workspace \
+                            hashicorp/terraform:1.15.6 \
+                            terraform apply -input=false tfplan.txt
                     '''
                 }
             }
