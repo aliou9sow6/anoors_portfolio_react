@@ -269,10 +269,43 @@ pipeline {
                 Consultez les logs : ${env.BUILD_URL}console
                 """
         }
-
-        always {
-            cleanWs()
+                '''
+            }
         }
+
+    }
+
+    post {
+      success {
+          mail to: 'kernelshell7@gmail.com',
+              subject: "✅ Pipeline reussi - ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+              body: """
+              Le pipeline s'est execute avec succes !
+
+              Job       : ${env.JOB_NAME}
+              Build     : #${env.BUILD_NUMBER}
+              Durée     : ${currentBuild.durationString}
+              URL       : ${env.BUILD_URL}
+                          """
+                  }
+
+                  failure {
+                      mail to: 'kernelshell7@gmail.com',
+                          subject: "❌ Pipeline echoue - ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                          body: """
+              Le pipeline a echoue !
+
+              Job       : ${env.JOB_NAME}
+              Build     : #${env.BUILD_NUMBER}
+              Durée     : ${currentBuild.durationString}
+              URL       : ${env.BUILD_URL}
+
+              Consultez les logs : ${env.BUILD_URL}console 
+                          """
+      }
+
+      always {
+          cleanWs() // Nettoie l'espace de travail après chaque build
+      }
     }
 }
-
