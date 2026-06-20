@@ -1,117 +1,228 @@
-# Full Stack portfolio
+# Anoors Portfolio — Full Stack DevOps
 
+Application web Full Stack de gestion de portfolio, conteneurisée et déployée via un pipeline CI/CD complet.
 
-* application Web SPA (Single Page Application) de gestion de portfolio avec Reactjs
-# Portfolio App — Gestion de Projets
-
-Application Web SPA (Single Page Application) de gestion de portfolio réalisée avec **React JS** et **json-server** comme backend REST factice.
+**Stack** : React 19 · Node.js/Express 5 · MongoDB · Docker · Jenkins · SonarQube · Kubernetes · Terraform · AWS
 
 ---
 
-## Prérequis
+## Architecture
 
-- **Node.js** ≥ 16.x
-- **npm** ≥ 8.x
+```
+[Browser]
+    │
+[Nginx :80] ──── React SPA (build statique)
+    │ /api/*
+[Express :5000] ──── MongoDB
+```
+
+### Infrastructure
+
+| Scénario | Description | Coût |
+|---|---|---|
+| **Local** | Docker Compose sur la machine | Gratuit |
+| **Kubernetes (Docker Desktop)** | kind, 2 nodes | Gratuit |
+| **AWS Free Tier** | EC2 t2.micro + Docker Compose | ~$0 (12 mois) |
 
 ---
 
-## Installation
+## Démarrage rapide
+
+### Prérequis
+
+- Docker Desktop (avec Kubernetes activé pour le déploiement K8s)
+- Node.js ≥ 18
+- AWS CLI + Terraform ≥ 1.6 (pour le déploiement cloud)
+
+### Développement local
 
 ```bash
-# 1. Cloner / décompresser le projet
-cd portfolio-app
+# Cloner le projet
+git clone https://github.com/aliou9sow6/anoors_portfolio_react.git
+cd anoors_portfolio_react
 
-# 2. Installer les dépendances
+# Copier et remplir les variables d'environnement
+cp .env.example .env
+
+# Démarrer frontend + backend + MongoDB
+docker-compose up -d
+
+# Frontend : http://localhost:80
+# Backend  : http://localhost:5000
+```
+
+### Sans Docker
+
+```bash
 npm install
-
-# 3. Installer json-server globalement (optionnel)
-npm install -g json-server
+# Terminal 1 — Backend
+cd backend && npm install && npm start
+# Terminal 2 — Frontend
+npm start  # http://localhost:3000
 ```
 
 ---
 
-## Lancement
+## Pipeline CI/CD (Jenkins)
 
-Il faut démarrer **deux terminaux** :
+### Flux
 
-### Terminal 1 — Backend json-server (port 3001)
-```bash
-npm run server
 ```
-L'API REST sera disponible sur `http://localhost:3001/projets`
-
-### Terminal 2 — Application React (port 3000)
-```bash
-npm start
+GitHub Push
+    │
+    ▼
+Checkout → SonarQube → Quality Gate
+    │
+    ▼
+Build Docker Images (parallel)
+    │
+    ▼
+Push to Docker Hub
+    │
+    ├── [kubernetes]  Terraform Init & Validate
+    │                 Terraform Plan
+    │                 Terraform Apply (approbation manuelle)
+    │                 Deploy to Kubernetes
+    │
+    └── [docker-compose]  Deploy with Docker Compose
 ```
-L'application s'ouvre automatiquement sur `http://localhost:3000`
+
+### Paramètres du pipeline
+
+| Paramètre | Valeurs | Description |
+|---|---|---|
+| `DEPLOY_TARGET` | `kubernetes` / `docker-compose` | Cible de déploiement |
+| `K8S_NAMESPACE` | `portfolio` | Namespace Kubernetes |
+| `MONGO_PASSWORD` | (secret) | Mot de passe MongoDB pour Terraform |
+
+### Credentials Jenkins requis
+
+| ID | Type | Usage |
+|---|---|---|
+| `dockerhub-creds` | Username/Password | Push vers Docker Hub |
+| `github-creds` | Username/Password ou SSH | Checkout GitHub |
+| `aws-credentials` | AWS Credentials | Terraform (déploiement AWS) |
+| `kubeconfig` | Secret file | Déploiement Kubernetes |
+
+---
+
+## Infrastructure Terraform (Scénario AWS Free Tier)
+
+```
+terraform/scenario1-free-tier/
+├── provider.tf          # Provider AWS + TLS + Local
+├── variables.tf         # Variables typées avec validations
+├── terraform.tfvars.example  # Template (copier → terraform.tfvars)
+├── main.tf              # VPC, EC2, SG, EIP, clé SSH
+├── outputs.tf           # IP publique, URLs, commande SSH
+├── backend.tf           # S3 + DynamoDB pour le remote state
+└── scripts/
+    └── user_data.sh     # Init EC2 : Docker + Docker Compose + app
+```
+
+### Déploiement manuel
+
+```bash
+cd terraform/scenario1-free-tier
+
+# Copier et personnaliser les variables
+cp terraform.tfvars.example terraform.tfvars
+# Éditer : mot de passe MongoDB, IP SSH autorisée, nom de clé
+
+terraform init
+terraform plan  -var-file=terraform.tfvars
+terraform apply -var-file=terraform.tfvars
+
+# Outputs après apply :
+# elastic_ip   = "54.x.x.x"
+# frontend_url = "http://54.x.x.x"
+# ssh_command  = "ssh -i portfolio-keypair.pem ubuntu@54.x.x.x"
+
+# Détruire (stop facturation)
+terraform destroy -var-file=terraform.tfvars
+```
+
+### Estimation des coûts
+
+| Ressource | Free Tier (12 mois) | Après |
+|---|---|---|
+| EC2 t2.micro | 750h/mois | ~$8.50/mois |
+| EBS 20 Go | 30 Go/mois | ~$2/mois |
+| Elastic IP | Gratuit si attachée | ~$3.60/mois |
+| **Total** | **~$0** | **~$14/mois** |
+
+---
+
+## Kubernetes (Docker Desktop)
+
+```bash
+# Appliquer les manifests
+kubectl apply -f k8s/
+
+# Vérifier
+kubectl get pods -n portfolio
+kubectl get svc  -n portfolio
+```
+
+### Manifests
+
+```
+k8s/
+├── namespace.yaml
+├── backend-deployment.yaml   # 2 replicas, liveness/readiness probes
+├── backend-service.yaml      # ClusterIP :5000
+├── frontend-deployment.yaml  # 2 replicas
+├── frontend-service.yaml     # LoadBalancer :3000
+└── ingress.yaml              # / → frontend, /api → backend
+```
 
 ---
 
 ## Structure du projet
 
 ```
-portfolio-app/
-├── public/
-│   └── index.html
-├── src/
-│   ├── App.jsx                    # Composant racine, gestion des vues
-│   ├── index.js                   # Point d'entrée React
-│   ├── components/
-│   │   ├── Dossier.jsx            # État global, liste des projets
-│   │   ├── Projet.jsx             # Carte d'un projet (libellé + image + supprimer)
-│   │   ├── AjouterProjet.jsx      # Formulaire d'ajout
-│   │   ├── DetaillerProjet.jsx    # Vue détaillée (Annuler / Éditer)
-│   │   └── EditerProjet.jsx       # Formulaire d'édition
-│   ├── services/
-│   │   └── api.js                 # Fonctions fetch (GET, POST, PUT, DELETE)
-│   └── styles/
-│       └── App.css                # Design system complet
-├── db.json                        # Base de données json-server
-├── package.json
-└── README.md
+anoors_portfolio_react/
+├── src/                    # Frontend React
+│   ├── components/         # Accueil, Dossier, Projet, CRUD...
+│   ├── services/api.js     # Appels Axios vers le backend
+│   └── utils/imageUtils.js
+├── backend/                # API Node.js/Express
+│   ├── server.js
+│   ├── models/Projet.js    # Schéma Mongoose
+│   └── routes/projets.js   # Routes CRUD
+├── terraform/
+│   ├── scenario1-free-tier/ # Infrastructure AWS Free Tier
+│   └── scenario2-eks/       # Architecture EKS avancée
+├── k8s/                    # Manifests Kubernetes
+├── Jenkinsfile             # Pipeline CI/CD
+├── Dockerfile              # Build frontend (multi-stage)
+├── backend/Dockerfile      # Build backend
+├── docker-compose.yml      # Stack locale complète
+└── nginx.conf              # Config Nginx pour le frontend
 ```
 
 ---
 
-## Fonctionnalités
+## API Backend
 
-| Fonctionnalité | Composant | Méthode HTTP |
+| Méthode | Endpoint | Action |
 |---|---|---|
-| Lister les projets | `Dossier` | `GET /projets` |
-| Rechercher un projet | `Dossier` | (filtrage local) |
-| Ajouter un projet | `AjouterProjet` | `POST /projets` |
-| Supprimer un projet | `Dossier` + `Projet` | `DELETE /projets/:id` |
-| Voir le détail | `DetaillerProjet` | — |
-| Éditer un projet | `EditerProjet` | `PUT /projets/:id` |
-
----
-
-## API REST (json-server)
-
-| Méthode | URL | Action |
-|---|---|---|
-| GET | `/projets` | Récupérer tous les projets |
-| GET | `/projets/:id` | Récupérer un projet |
-| POST | `/projets` | Ajouter un projet |
+| GET | `/projets` | Lister tous les projets |
+| GET | `/projets/:id` | Détail d'un projet |
+| POST | `/projets` | Créer un projet |
 | PUT | `/projets/:id` | Modifier un projet |
 | DELETE | `/projets/:id` | Supprimer un projet |
 
 ---
 
-## Structure d'un projet (db.json)
+## Versions
 
-```json
-{
-  "id": "1",
-  "libelle": "Nom du projet",
-  "image": "https://...",
-  "description": "Description complète",
-  "technologies": ["React", "Node.js"],
-  "dateCreation": "2024-01-15",
-  "lien": "https://github.com/..."
-}
-```
-## Integration the jenkins pipeline
-
-## ngrok
+| Composant | Version |
+|---|---|
+| React | 19.x |
+| Node.js | 22 Alpine |
+| Express | 5.x |
+| MongoDB | 6.0 |
+| Terraform | 1.6.6 |
+| Kubernetes | 1.34.x (Docker Desktop) |
+| Jenkins | LTS |
