@@ -49,7 +49,7 @@ pipeline {
         
         stage('Run Tests') {
             steps {
-                sh 'npm test -- --coverage --watchAll=false'
+                sh 'npm run test:coverage'
             }
         }
 
