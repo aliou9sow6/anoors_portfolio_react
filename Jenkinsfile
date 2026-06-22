@@ -38,6 +38,15 @@ pipeline {
             steps { checkout scm }
         }
 
+        stage('Install Dependencies and Run Tests') {
+            steps {
+                sh '''
+                    npm install
+                    npm test -- --coverage --watchAll=false
+                '''
+            }
+        }
+        
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('sonarqube-server') {
