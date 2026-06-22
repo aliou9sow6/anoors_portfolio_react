@@ -1,5 +1,8 @@
 pipeline {
     agent any
+    tools {
+        nodejs 'nodeJs'   // nom que tu as donné dans Tools
+    }
 
     parameters {
         choice(
